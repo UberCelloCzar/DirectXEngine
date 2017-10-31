@@ -2,6 +2,7 @@
 #include "Vertex.h"
 #include <iostream>
 #include "WICTextureLoader.h"
+#include "Bullet.h"
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -50,6 +51,11 @@ Game::~Game()
 	shaderResourceView1->Release();
 	samplerState1->Release();
 
+	for (int i = 0; i < 20; i++) // Initialize the memory pool and the inactive queue
+	{
+		delete bullets[i];
+	}
+
 	// Delete our simple shader objects, which
 	// will clean up their own internal DirectX stuff
 	delete vertexShader;
@@ -79,7 +85,7 @@ void Game::Init()
 	device->CreateSamplerState(&samplerDesc, &samplerState1);
 
 	material = new Material(vertexShader, pixelShader, shaderResourceView1, samplerState1);
-	gameObject1 = new GameObject(mesh1, material);
+	gameObject1 = new GameObject(mesh1, material, {});
 	prevMousePos.x = NULL;
 	light1 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, -1.0f, 0.0f)};
 	light2 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) };
@@ -88,6 +94,15 @@ void Game::Init()
 	// geometric primitives (points, lines or triangles) we want to draw.  
 	// Essentially: "What kind of shape should the GPU draw with our data?"
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	head = 0;
+	tail = 0; // Initialize queue tracers
+
+	for (int i = 0; i < 20; i++) // Initialize the memory pool and the inactive queue
+	{
+		bullets[i] = new GameObject(mesh1, material, {new Bullet()});
+		inactiveBullets[i] = i;
+	}
 }
 
 // --------------------------------------------------------
@@ -111,6 +126,8 @@ void Game::LoadShaders()
 void Game::LoadGeometry()
 {
 	mesh1 = new Mesh("models\\sphere.obj", device);
+            head = 0;
+            tail = 0; // Initialize queue tracers
 }
 
 
@@ -130,12 +147,29 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+
 	// Quit if the escape key is pressed
 	if (GetAsyncKeyState(VK_ESCAPE))
 		Quit();
+
+	for (int i = 0; i < 20; i++) // Update active bullets
+	{
+		if (dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive)
+		{
+			bullets[i]->Update(deltaTime);
+			if (!(dynamic_cast<Bullet*>(bullets[i]->scripts[0]))->isActive) // If the bullet went out of bounds or was otherwise destroyed, add it back to the inactive queue
+			{
+				ReloadBullet(i);
+			}
+			else if (bullets[i]->GetChanged())
+			{
+				bullets[i]->CalculateWorldMatrix();
+			}
+		}
+	}
+
 	float right = 0;
 	float forward = 0;
-	float vert = 0;
 	if (GetAsyncKeyState('A') & 0x8000) 
 	{ 
 		right -= 5*deltaTime;
@@ -152,21 +186,74 @@ void Game::Update(float deltaTime, float totalTime)
 	{
 		forward -= 5*deltaTime;
 	}
-	if (GetAsyncKeyState('Q') & 0x8000)
+	if (fireCD <= 0)
 	{
-		vert -= 5 * deltaTime;
+		if (GetAsyncKeyState(VK_LBUTTON) & 0x8000)
+		{
+			Fire();
+		}
 	}
-	if (GetAsyncKeyState('E') & 0x8000)
+	else
 	{
-		vert += 5 * deltaTime;
+		fireCD -= deltaTime;
 	}
-	if (forward != 0 || right != 0 || vert != 0)
+
+	if (forward != 0 || right != 0)
 	{
-		camera->MoveRelative(forward, right, vert);
+		camera->MoveRelative(forward, right, 0);
 	}
+
+
+	gameObject1->Update(deltaTime); // *************** Turn this into an iteration on the gameobject list
 
 	if (gameObject1->GetChanged()) { gameObject1->CalculateWorldMatrix(); }
 	camera->Update();
+}
+
+void Game::ReloadBullet(int i) // Adds the index i of a freshly inactive bullet back to the inactive queue and moves the tail
+{
+	inactiveBullets[tail] = i;
+	tail++;
+	if (tail > 20)
+	{
+		tail = 0;
+	}
+}
+
+bool Game::NoBullets()
+{
+	for (int i = 0; i < 20; i++)
+	{
+		if (inactiveBullets[i] != 42)
+		{
+			return false; // If at least one bullet is inactive, say so
+		}
+	}
+	return true;
+}
+
+void Game::Fire() // Fires a bullet
+{
+	if (NoBullets())
+	{
+		return; // If this happens the cooldown has been set poorly.
+	}
+
+	currentBullet = inactiveBullets[head]; // Move the bullet to the character's position
+	inactiveBullets[head] = 42;
+	head++;
+	if (head>19)
+	{
+		head = 0;
+	}
+
+	XMFLOAT3 pos = camera->GetPosition();
+	XMFLOAT3 dir = camera->GetDirection();
+	bullets[currentBullet]->SetPosition(pos.x, pos.y, pos.z); // Set the position and direction of the bullet, then fire it
+	bullets[currentBullet]->SetVelocity(dir.x * 100, dir.y * 100, dir.z * 100);
+	dynamic_cast<Bullet*>(bullets[currentBullet]->scripts[0])->isActive = true;
+	fireCD = 1.0f;
+	std::cout << "Firing: " << currentBullet << std::endl;
 }
 
 // --------------------------------------------------------
@@ -202,6 +289,15 @@ void Game::Draw(float deltaTime, float totalTime)
 	pixelShader->CopyBufferData("lightData");
 
 	gameObject1->Draw(context);
+
+	for (int i = 0; i < 20; i++) // Draw active bullets
+	{
+		if (dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive)
+		{
+			bullets[i]->Draw(context);
+		}
+	}
+
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

@@ -7,6 +7,7 @@
 #include "GameObject.h"
 #include "Camera.h"
 #include "Lights.h"
+#include <vector>
 
 class Game 
 	: public DXCore
@@ -41,7 +42,7 @@ private:
 	ID3D11ShaderResourceView* shaderResourceView1;
 	ID3D11SamplerState* samplerState1;
 
-	// Game Objects for the scene
+	// Game Objects for the scene ****************Turn this into a list or multiple lists
 	GameObject* gameObject1;
 
 	// The scene camera
@@ -58,5 +59,16 @@ private:
 	// Keeps track of the old mouse position.  Useful for 
 	// determining how far the mouse moved in a single frame.
 	POINT prevMousePos;
+
+	float fireCD; // The cooldown for firing
+	GameObject* bullets[20]; // Memory pool of bullets
+	int inactiveBullets[20]; // Queue of inactive bullet indices
+	int head; // Pointers to head and tail of queue
+	int tail;
+	int currentBullet; // Current bullet
+
+	void ReloadBullet(int i);
+	bool NoBullets(); // Returns a bool of whether there are any available bullets, ideally this never returns false
+	void Fire(); // Fires a bullet
 };
 

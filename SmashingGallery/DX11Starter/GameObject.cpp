@@ -1,16 +1,27 @@
 #include "GameObject.h"
 #include <iostream>
 
-GameObject::GameObject(Mesh* meshPtr, Material* matPtr)
+GameObject::GameObject(Mesh* meshPtr, Material* matPtr, std::vector<Script*> pScripts)
 {
 	mesh = meshPtr;
 	material = matPtr;
 	position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMStoreFloat4(&rotationQuaternion, XMQuaternionIdentity());
 	scale = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMMATRIX W = XMMatrixIdentity();
 	XMStoreFloat4x4(&worldMatrix, XMMatrixTranspose(W));
 	changed = true;
+	// Initialize collider here
+	scripts = pScripts;
+
+	if (scripts.size() > 0) // Call the update for each script each cycle
+	{
+		for each (Script* s in scripts)
+		{
+			s->Start(this);
+		}
+	}
 }
 
 
@@ -30,6 +41,10 @@ XMFLOAT4 GameObject::GetRotationQuaternion()
 XMFLOAT3 GameObject::GetScale()
 {
 	return scale;
+}
+XMFLOAT3 GameObject::GetVelocity()
+{
+	return velocity;
 }
 bool GameObject::GetChanged()
 {
@@ -83,6 +98,38 @@ int GameObject::SetScale(float x, float y, float z) // Set the scale
 	return 1;
 }
 
+int GameObject::SetVelocity(float x, float y, float z) // Set the velocity
+{
+	velocity.x = x;
+	velocity.y = y;
+	velocity.z = z;
+	return 1;
+}
+
+int GameObject::AddVelocity(float x, float y, float z) // Add to the existing velocity
+{
+	velocity.x += x;
+	velocity.y += y;
+	velocity.z += z;
+	return 1;
+}
+
+void GameObject::Update(float deltaTime)
+{
+	if (scripts.size() > 0) // Call the update for each script each cycle
+	{
+		for each (Script* s in scripts)
+		{
+			s->Update();
+		}
+	}
+
+	if (velocity.x != 0 && velocity.y != 0 && velocity.z != 0)
+	{
+		Translate(velocity.x*deltaTime, velocity.y*deltaTime, velocity.z*deltaTime);
+	}
+}
+
 int GameObject::Draw(ID3D11DeviceContext* context)
 {
 	material->GetVertexShader()->SetShader();
@@ -121,4 +168,9 @@ int GameObject::CalculateWorldMatrix() // Recalculates the world matrix and spit
 GameObject::~GameObject()
 {
 	mesh = NULL; // Remove the pointer
+	material = NULL;
+	for each (Script* s in scripts)
+	{
+		delete s;
+	}
 }
