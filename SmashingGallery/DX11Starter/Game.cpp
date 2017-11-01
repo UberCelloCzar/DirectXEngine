@@ -3,6 +3,7 @@
 #include <iostream>
 #include "WICTextureLoader.h"
 #include "Bullet.h"
+#include <math.h>
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -86,6 +87,8 @@ void Game::Init()
 
 	material = new Material(vertexShader, pixelShader, shaderResourceView1, samplerState1);
 	gameObject1 = new GameObject(mesh1, material, {});
+	gameObject2 = new GameObject(mesh1, material, {});
+	gameObject3 = new GameObject(mesh1, material, {});
 	prevMousePos.x = NULL;
 	light1 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, -1.0f, 0.0f)};
 	light2 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) };
@@ -204,9 +207,13 @@ void Game::Update(float deltaTime, float totalTime)
 	}
 
 
-	gameObject1->Update(deltaTime); // *************** Turn this into an iteration on the gameobject list
+	gameObject1->SetPosition(sin(totalTime * 1.6) * 2, gameObject1->GetPosition().y, gameObject1->GetPosition().z); // *************** Turn this into an iteration on the gameobject list
+	gameObject2->SetPosition(sin(totalTime * 2) * 2, gameObject2->GetPosition().y, gameObject2->GetPosition().z);
+	gameObject3->SetPosition(sin(totalTime * 1.2) * 2, gameObject3->GetPosition().y, gameObject3->GetPosition().z);
 
 	if (gameObject1->GetChanged()) { gameObject1->CalculateWorldMatrix(); }
+	if (gameObject2->GetChanged()) { gameObject2->CalculateWorldMatrix(); }
+	if (gameObject3->GetChanged()) { gameObject3->CalculateWorldMatrix(); }
 	camera->Update();
 }
 
@@ -289,6 +296,12 @@ void Game::Draw(float deltaTime, float totalTime)
 	pixelShader->CopyBufferData("lightData");
 
 	gameObject1->Draw(context);
+	gameObject2->Draw(context);
+	gameObject3->Draw(context);
+
+	gameObject1->SetPosition(0, 1.5, 0);
+	gameObject2->SetPosition(0, 0, 0);
+	gameObject3->SetPosition(0, -1.5, 0);
 
 	for (int i = 0; i < 20; i++) // Draw active bullets
 	{
