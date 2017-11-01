@@ -44,6 +44,8 @@ private:
 
 	// Game Objects for the scene ****************Turn this into a list or multiple lists
 	GameObject* gameObject1;
+	GameObject* gameObject2;
+	GameObject* gameObject3;
 
 	// The scene camera
 	Camera* camera;
