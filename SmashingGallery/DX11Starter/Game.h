@@ -7,6 +7,7 @@
 #include "GameObject.h"
 #include "Camera.h"
 #include "Lights.h"
+#include "target.h"
 #include <vector>
 
 class Game 
@@ -23,6 +24,8 @@ public:
 	void OnResize();
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
+	bool SphereCollide(GameObject* obj1, GameObject* obj2);
+	float Distance(const XMFLOAT3 v1, const XMFLOAT3 v2);
 
 	// Overridden mouse input helper methods
 	void OnMouseDown (WPARAM buttonState, int x, int y);
@@ -42,10 +45,8 @@ private:
 	ID3D11ShaderResourceView* shaderResourceView1;
 	ID3D11SamplerState* samplerState1;
 
-	// Game Objects for the scene ****************Turn this into a list or multiple lists
-	GameObject* gameObject1;
-	GameObject* gameObject2;
-	GameObject* gameObject3;
+	// Targets for the scene
+	GameObject* targets[3];
 
 	// The scene camera
 	Camera* camera;

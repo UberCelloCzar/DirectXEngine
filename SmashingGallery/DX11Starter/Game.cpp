@@ -45,7 +45,6 @@ Game::~Game()
 {
 	// Release any (and all!) DirectX objects
 	// we've made in the Game class
-	delete gameObject1;
 	delete mesh1;
 	delete camera;
 	delete material;
@@ -55,6 +54,11 @@ Game::~Game()
 	for (int i = 0; i < 20; i++) // Initialize the memory pool and the inactive queue
 	{
 		delete bullets[i];
+	}
+
+	for (int i = 0; i < 3; i++) // Initialize the memory pool and the inactive queue
+	{
+		delete targets[i];
 	}
 
 	// Delete our simple shader objects, which
@@ -86,9 +90,9 @@ void Game::Init()
 	device->CreateSamplerState(&samplerDesc, &samplerState1);
 
 	material = new Material(vertexShader, pixelShader, shaderResourceView1, samplerState1);
-	gameObject1 = new GameObject(mesh1, material, {});
-	gameObject2 = new GameObject(mesh1, material, {});
-	gameObject3 = new GameObject(mesh1, material, {});
+	targets[0] = new GameObject(mesh1, material, { new target() });
+	targets[1] = new GameObject(mesh1, material, { new target() });
+	targets[2] = new GameObject(mesh1, material, { new target() });
 	prevMousePos.x = NULL;
 	light1 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, -1.0f, 0.0f)};
 	light2 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) };
@@ -168,7 +172,23 @@ void Game::Update(float deltaTime, float totalTime)
 			{
 				bullets[i]->CalculateWorldMatrix();
 			}
+
+			//check for collisons with targets
+			//set inactive if collision detected
+			for (int j = 0; j < 3; i++)
+			{
+				if (dynamic_cast<target*>(targets[i]->scripts[0])->isActive)
+				{
+					if (SphereCollide(targets[j], bullets[i]))
+					{
+						dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive = false;
+						dynamic_cast<target*>(targets[j]->scripts[0])->isActive = false;
+					}
+				}
+			}
 		}
+
+
 	}
 
 	float right = 0;
@@ -206,14 +226,17 @@ void Game::Update(float deltaTime, float totalTime)
 		camera->MoveRelative(forward, right, 0);
 	}
 
+	//has to be updated with the amount of targets added
+	for (int i = 0; i < 3; i++)
+	{
+		if (dynamic_cast<target*>(targets[i]->scripts[0])->isActive)
+		{
+			targets[i]->SetPosition(sin(totalTime * 1.6f + (2 * i)) * 2, targets[i]->GetPosition().y, targets[i]->GetPosition().z);
+			if (targets[i]->GetChanged()) { targets[i]->CalculateWorldMatrix(); }
+		}
+	}
 
-	gameObject1->SetPosition(sin(totalTime * 1.6) * 2, gameObject1->GetPosition().y, gameObject1->GetPosition().z); // *************** Turn this into an iteration on the gameobject list
-	gameObject2->SetPosition(sin(totalTime * 2) * 2, gameObject2->GetPosition().y, gameObject2->GetPosition().z);
-	gameObject3->SetPosition(sin(totalTime * 1.2) * 2, gameObject3->GetPosition().y, gameObject3->GetPosition().z);
 
-	if (gameObject1->GetChanged()) { gameObject1->CalculateWorldMatrix(); }
-	if (gameObject2->GetChanged()) { gameObject2->CalculateWorldMatrix(); }
-	if (gameObject3->GetChanged()) { gameObject3->CalculateWorldMatrix(); }
 	camera->Update();
 }
 
@@ -295,13 +318,19 @@ void Game::Draw(float deltaTime, float totalTime)
 	pixelShader->SetData("light2", &light2, 44);
 	pixelShader->CopyBufferData("lightData");
 
-	gameObject1->Draw(context);
-	gameObject2->Draw(context);
-	gameObject3->Draw(context);
 
-	gameObject1->SetPosition(0, 1.5, 0);
-	gameObject2->SetPosition(0, 0, 0);
-	gameObject3->SetPosition(0, -1.5, 0);
+	//has to be updated with the amount of targets added
+	for (int i = 0; i < 3; i++)
+	{
+		if (dynamic_cast<target*>(targets[i]->scripts[0])->isActive)
+		{
+			targets[i]->Draw(context);
+		}
+	}
+
+	targets[0]->SetPosition(0, 1.5, 0);
+	targets[1]->SetPosition(0, 0, 0);
+	targets[2]->SetPosition(0, -1.5, 0);
 
 	for (int i = 0; i < 20; i++) // Draw active bullets
 	{
@@ -318,6 +347,26 @@ void Game::Draw(float deltaTime, float totalTime)
 	swapChain->Present(0, 0);
 }
 
+bool Game::SphereCollide(GameObject* obj1, GameObject* obj2)
+{
+	if (Distance(obj1->GetPosition(), obj2->GetPosition()) < obj1->GetScale().x + obj2->GetScale().x)
+	{
+		return true;
+	}
+	return false;
+}
+
+float Game::Distance(XMFLOAT3 v1, XMFLOAT3 v2)
+{
+	XMVECTOR vector1 = XMLoadFloat3(&v1);
+	XMVECTOR vector2 = XMLoadFloat3(&v2);
+	XMVECTOR vectorSub = XMVectorSubtract(vector1, vector2);
+	XMVECTOR length = XMVector3Length(vectorSub);
+
+	float distance = 0.0f;
+	XMStoreFloat(&distance, length);
+	return distance;
+}
 
 #pragma region Mouse Input
 
