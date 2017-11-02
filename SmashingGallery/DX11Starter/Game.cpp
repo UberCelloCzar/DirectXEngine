@@ -51,12 +51,12 @@ Game::~Game()
 	shaderResourceView1->Release();
 	samplerState1->Release();
 
-	for (int i = 0; i < 20; i++) // Initialize the memory pool and the inactive queue
+	for (int i = 0; i < 20; i++) // Clean up
 	{
 		delete bullets[i];
 	}
 
-	for (int i = 0; i < 3; i++) // Initialize the memory pool and the inactive queue
+	for (int i = 0; i < 3; i++)
 	{
 		delete targets[i];
 	}
@@ -108,8 +108,10 @@ void Game::Init()
 	for (int i = 0; i < 20; i++) // Initialize the memory pool and the inactive queue
 	{
 		bullets[i] = new GameObject(mesh1, material, {new Bullet()});
+		bullets[i]->SetScale(.3, .3, .3);
 		inactiveBullets[i] = i;
 	}
+	score = 0;
 }
 
 // --------------------------------------------------------
@@ -164,6 +166,24 @@ void Game::Update(float deltaTime, float totalTime)
 		if (dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive)
 		{
 			bullets[i]->Update(deltaTime);
+			for (int j = 0; j < 3; j++) // Checks this bullet against all targets (will turn into octree if extra performance is needed later)
+			{
+				if (dynamic_cast<target*>(targets[j]->scripts[0])->isActive)
+				{
+					if (bullets[i]->collider.collidesWith(*bullets[i], *targets[j]))
+					{
+						dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive = false;
+						dynamic_cast<target*>(targets[j]->scripts[0])->isActive = false;
+						score += 1;
+						std::cout << score << std::endl;
+					}
+				}
+			}
+			if (bullets[i]->collider.checkBounds(*bullets[i]))
+			{
+				dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive = false;
+
+			}
 			if (!(dynamic_cast<Bullet*>(bullets[i]->scripts[0]))->isActive) // If the bullet went out of bounds or was otherwise destroyed, add it back to the inactive queue
 			{
 				ReloadBullet(i);
@@ -171,20 +191,6 @@ void Game::Update(float deltaTime, float totalTime)
 			else if (bullets[i]->GetChanged())
 			{
 				bullets[i]->CalculateWorldMatrix();
-			}
-
-			//check for collisons with targets
-			//set inactive if collision detected
-			for (int j = 0; j < 3; j++)
-			{
-				if (dynamic_cast<target*>(targets[j]->scripts[0])->isActive)
-				{
-					if (SphereCollide(targets[j], bullets[i]))
-					{
-						dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive = false;
-						dynamic_cast<target*>(targets[j]->scripts[0])->isActive = false;
-					}
-				}
 			}
 		}
 
@@ -345,27 +351,6 @@ void Game::Draw(float deltaTime, float totalTime)
 	//  - Puts the final frame we're drawing into the window so the user can see it
 	//  - Do this exactly ONCE PER FRAME (always at the very end of the frame)
 	swapChain->Present(0, 0);
-}
-
-bool Game::SphereCollide(GameObject* obj1, GameObject* obj2)
-{
-	if (Distance(obj1->GetPosition(), obj2->GetPosition()) < (obj1->GetScale().x + obj2->GetScale().x))
-	{
-		return true;
-	}
-	return false;
-}
-
-float Game::Distance(XMFLOAT3 v1, XMFLOAT3 v2)
-{
-	XMVECTOR vector1 = XMLoadFloat3(&v1);
-	XMVECTOR vector2 = XMLoadFloat3(&v2);
-	XMVECTOR vectorSub = XMVectorSubtract(vector1, vector2);
-	XMVECTOR length = XMVector3Length(vectorSub);
-
-	float distance = 0.0f;
-	XMStoreFloat(&distance, length);
-	return distance;
 }
 
 #pragma region Mouse Input

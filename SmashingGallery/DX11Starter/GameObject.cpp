@@ -132,7 +132,7 @@ void GameObject::Update(float deltaTime)
 
 int GameObject::Draw(ID3D11DeviceContext* context)
 {
-	material->GetVertexShader()->SetShader();
+	material->GetVertexShader()->SetShader(); // Don't do this here, when we have time we should optimize this by moving this to game so we're not doing a bunch of times with the same shaders
 	material->GetPixelShader()->SetShader();
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;

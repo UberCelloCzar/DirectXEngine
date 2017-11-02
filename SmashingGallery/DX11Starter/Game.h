@@ -24,14 +24,14 @@ public:
 	void OnResize();
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
-	bool SphereCollide(GameObject* obj1, GameObject* obj2);
-	float Distance(const XMFLOAT3 v1, const XMFLOAT3 v2);
 
 	// Overridden mouse input helper methods
 	void OnMouseDown (WPARAM buttonState, int x, int y);
 	void OnMouseUp	 (WPARAM buttonState, int x, int y);
 	void OnMouseMove (WPARAM buttonState, int x, int y);
 	void OnMouseWheel(float wheelDelta,   int x, int y);
+
+	int score; // Player score
 private:
 
 	// Initialization helper methods - feel free to customize, combine, etc.
