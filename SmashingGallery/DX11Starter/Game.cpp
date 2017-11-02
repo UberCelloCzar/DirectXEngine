@@ -175,9 +175,9 @@ void Game::Update(float deltaTime, float totalTime)
 
 			//check for collisons with targets
 			//set inactive if collision detected
-			for (int j = 0; j < 3; i++)
+			for (int j = 0; j < 3; j++)
 			{
-				if (dynamic_cast<target*>(targets[i]->scripts[0])->isActive)
+				if (dynamic_cast<target*>(targets[j]->scripts[0])->isActive)
 				{
 					if (SphereCollide(targets[j], bullets[i]))
 					{
@@ -349,7 +349,7 @@ void Game::Draw(float deltaTime, float totalTime)
 
 bool Game::SphereCollide(GameObject* obj1, GameObject* obj2)
 {
-	if (Distance(obj1->GetPosition(), obj2->GetPosition()) < obj1->GetScale().x + obj2->GetScale().x)
+	if (Distance(obj1->GetPosition(), obj2->GetPosition()) < (obj1->GetScale().x + obj2->GetScale().x))
 	{
 		return true;
 	}
