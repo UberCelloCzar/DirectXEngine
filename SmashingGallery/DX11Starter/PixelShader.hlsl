@@ -13,7 +13,8 @@ struct VertexToPixel
 	//  v    v                v
 	float4 position		      : SV_POSITION;	// XYZW position (System Value Position)
 	float2 uv                 : TEXCOORD;
-	float3 normal             : NORMAL;
+	float3 normal		      : NORMAL;
+	float3 tangent		      : TANGENT;
 };
 
 struct DirectionalLight
@@ -32,6 +33,7 @@ cbuffer lightData : register(b2)
 
 Texture2D diffuseTexture  : register(t0); 
 SamplerState basicSampler : register(s0);
+Texture2D normalTexture	  : register(t1);
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -44,8 +46,20 @@ SamplerState basicSampler : register(s0);
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	// Normalize the incoming normal
+	// Normalize the incoming normal and tangent
 	input.normal = normalize(input.normal);
+	input.tangent = normalize(input.tangent);
+
+
+	float3 normalFromTexture = normalTexture.Sample(basicSampler, input.uv).xyz * 2 - 1; // Unpack normal map
+
+	float3 N = input.normal; // Create the tangent space to world matrix
+	float3 T = normalize(input.tangent - N * dot(input.tangent, N));
+	float3 B = cross(T, N);
+	float3x3 TBN = float3x3(T, B, N);
+
+	input.normal = normalize(mul(normalFromTexture, TBN)); // Convert to world space and use the normal from the map
+
 	// Diffuse light calculation
 	float NdotL = saturate(dot(input.normal, -light1.Direction));
 

@@ -255,3 +255,64 @@ Mesh::~Mesh()
 	vertexBuffer->Release(); // Release the buffers from memory
 	indexBuffer->Release();
 }
+
+void Mesh::CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices) // Calculate the tangents
+{
+	for (int i = 0; i < numVerts; i++) // I fthey've changed we don't want residual
+	{
+		verts[i].Tangent = XMFLOAT3(0, 0, 0);
+	}
+
+	for (int i = 0; i < numVerts;) // Take it one tri at a time
+	{
+		unsigned int i1 = indices[i++];
+		unsigned int i2 = indices[i++];
+		unsigned int i3 = indices[i++];
+		Vertex* v1 = &verts[i1];
+		Vertex* v2 = &verts[i2];
+		Vertex* v3 = &verts[i3];
+
+		float x1 = v2->Position.x - v1->Position.x; // Vectors relative to tri position (basically edges)
+		float y1 = v2->Position.y - v1->Position.y;
+		float z1 = v2->Position.z - v1->Position.z;
+
+		float x2 = v3->Position.x - v1->Position.x;
+		float y2 = v3->Position.y - v1->Position.y;
+		float z2 = v3->Position.z - v1->Position.z;
+
+		float s1 = v2->UV.x - v1->UV.x; // Vectors relative to uv
+		float t1 = v2->UV.y - v1->UV.y;
+
+		float s2 = v3->UV.x - v1->UV.x;
+		float t2 = v3->UV.y - v1->UV.y;
+
+		float r = 1.0f / (s1 * t2 - s2 * t1); // Vectors for tangent calcs
+
+		float tx = (t2 * x1 - t1 * x2) * r;
+		float ty = (t2 * y1 - t1 * y2) * r;
+		float tz = (t2 * z1 - t1 * z2) * r;
+
+		v1->Tangent.x += tx; // Adjest each vert's tangents
+		v1->Tangent.y += ty;
+		v1->Tangent.z += tz;
+
+		v2->Tangent.x += tx;
+		v2->Tangent.y += ty;
+		v2->Tangent.z += tz;
+
+		v3->Tangent.x += tx;
+		v3->Tangent.y += ty;
+		v3->Tangent.z += tz;
+	}
+
+	for (int i = 0; i < numVerts; i++) // Ortho check
+	{
+		XMVECTOR normal = XMLoadFloat3(&verts[i].Normal);
+		XMVECTOR tangent = XMLoadFloat3(&verts[i].Tangent);
+
+		
+		tangent = XMVector3Normalize(tangent - normal * XMVector3Dot(normal, tangent)); // Gram-Schmidt
+
+		XMStoreFloat3(&verts[i].Tangent, tangent);
+	}
+}

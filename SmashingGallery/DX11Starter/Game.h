@@ -48,6 +48,7 @@ private:
 	GlassMat* glassMaterial;
 	ID3D11ShaderResourceView* shaderResourceView1;
 	ID3D11SamplerState* samplerState1;
+	ID3D11ShaderResourceView* normalShaderResourceView1;
 	ID3D11ShaderResourceView* refractShaderResourceView1;
 
 	// Targets for the scene

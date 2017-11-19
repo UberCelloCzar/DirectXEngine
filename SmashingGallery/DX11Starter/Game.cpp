@@ -27,6 +27,8 @@ Game::Game(HINSTANCE hInstance)
 	// Initialize fields
 	vertexShader = 0;
 	pixelShader = 0;
+	glassVertexShader = 0;
+	glassPixelShader = 0;
 
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
@@ -51,6 +53,7 @@ Game::~Game()
 	delete material;
 	delete glassMaterial;
 	shaderResourceView1->Release();
+    normalShaderResourceView1->Release();
 	samplerState1->Release();
 
 	for (int i = 0; i < 20; i++) // Clean up
@@ -86,7 +89,9 @@ void Game::Init()
 	camera = new Camera(width, height);
 	LoadGeometry();
 
-	CreateWICTextureFromFile(device, context, L"images\\StoneAlbedo.tif", 0, &shaderResourceView1, 0);
+	CreateWICTextureFromFile(device, context, L"images\\rock.jpg", 0, &shaderResourceView1);
+	CreateWICTextureFromFile(device, context, L"images\\rockNormals.jpg", 0, &normalShaderResourceView1);
+	std::cout << normalShaderResourceView1 << std::endl;
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -96,8 +101,8 @@ void Game::Init()
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, &samplerState1);
 
-	material = new Material(vertexShader, pixelShader, shaderResourceView1, samplerState1);
-	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView1, refractShaderResourceView1, samplerState1);
+	material = new Material(vertexShader, pixelShader, shaderResourceView1, normalShaderResourceView1, samplerState1);
+	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView1, normalShaderResourceView1, refractShaderResourceView1, samplerState1);
 	targets[0] = new GameObject(mesh1, material, { new target() });
 	targets[1] = new GameObject(mesh1, material, { new target() });
 	targets[2] = new GameObject(mesh1, material, { new target() });

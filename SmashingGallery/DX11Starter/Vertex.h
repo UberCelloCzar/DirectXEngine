@@ -12,4 +12,5 @@ struct Vertex
 	DirectX::XMFLOAT3 Position;	    // The position of the vertex
 	DirectX::XMFLOAT2 UV; // The vertex's UV texture coordinate
 	DirectX::XMFLOAT3 Normal; // The vertex's normal vector
+	DirectX::XMFLOAT3 Tangent;		// Tangent is REQUIRED for normal mapping!
 };

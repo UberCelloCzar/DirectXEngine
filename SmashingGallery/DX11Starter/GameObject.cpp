@@ -138,6 +138,7 @@ int GameObject::Draw(ID3D11DeviceContext* context)
 	material->GetVertexShader()->CopyBufferData("perObjectData");
 	material->GetPixelShader()->SetSamplerState("basicSampler", material->GetSamplerState());
 	material->GetPixelShader()->SetShaderResourceView("diffuseTexture", material->GetShaderResourceView());
+	material->GetPixelShader()->SetShaderResourceView("normalTexture", material->GetNormalShaderResourceView());
 	ID3D11Buffer* vertBuff = mesh->GetVertexBuffer(); // Set the second object
 	context->IASetVertexBuffers(0, 1, &vertBuff, &stride, &offset);
 	context->IASetIndexBuffer(mesh->GetIndexBuffer(), DXGI_FORMAT_R32_UINT, 0);
