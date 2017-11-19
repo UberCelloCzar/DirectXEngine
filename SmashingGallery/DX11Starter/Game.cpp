@@ -46,8 +46,10 @@ Game::~Game()
 	// Release any (and all!) DirectX objects
 	// we've made in the Game class
 	delete mesh1;
+	//delete mesh2;
 	delete camera;
 	delete material;
+	delete glassMaterial;
 	shaderResourceView1->Release();
 	samplerState1->Release();
 
@@ -61,10 +63,14 @@ Game::~Game()
 		delete targets[i];
 	}
 
+	delete glassTarget;
+
 	// Delete our simple shader objects, which
 	// will clean up their own internal DirectX stuff
 	delete vertexShader;
 	delete pixelShader;
+	delete glassVertexShader;
+	delete glassPixelShader;
 }
 
 // --------------------------------------------------------
@@ -81,6 +87,7 @@ void Game::Init()
 	LoadGeometry();
 
 	CreateWICTextureFromFile(device, context, L"images\\StoneAlbedo.tif", 0, &shaderResourceView1, 0);
+
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -90,6 +97,7 @@ void Game::Init()
 	device->CreateSamplerState(&samplerDesc, &samplerState1);
 
 	material = new Material(vertexShader, pixelShader, shaderResourceView1, samplerState1);
+	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView1, refractShaderResourceView1, samplerState1);
 	targets[0] = new GameObject(mesh1, material, { new target() });
 	targets[1] = new GameObject(mesh1, material, { new target() });
 	targets[2] = new GameObject(mesh1, material, { new target() });
@@ -127,6 +135,12 @@ void Game::LoadShaders()
 
 	pixelShader = new SimplePixelShader(device, context);
 	pixelShader->LoadShaderFile(L"PixelShader.cso");
+	
+	glassVertexShader = new SimpleVertexShader(device, context);
+	glassVertexShader->LoadShaderFile(L"GlassVShader.cso");
+
+	glassPixelShader = new SimplePixelShader(device, context);
+	glassPixelShader->LoadShaderFile(L"GlassPShader.cso");
 }
 
 // --------------------------------------------------------
@@ -310,6 +324,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
+	/* Plain Objects (Shader Set 1) */
+	vertexShader->SetShader();
+	pixelShader->SetShader();
 	// Send data to shader variables
 	//  - Do this ONCE PER OBJECT you're drawing
 	//  - This is actually a complex process of copying data to a local buffer
@@ -317,7 +334,6 @@ void Game::Draw(float deltaTime, float totalTime)
 	//  - The "SimpleShader" class handles all of that for you.
 	vertexShader->SetMatrix4x4("view", camera->GetViewMatrix());
 	vertexShader->SetMatrix4x4("projection", camera->GetProjectionMatrix());
-	//vertexShader->SetMatrix4x4("world", gameObject1->GetWorldMatrix());
 	vertexShader->CopyBufferData("cameraData");
 
 	pixelShader->SetData("light1", &light1, 44);
@@ -345,6 +361,18 @@ void Game::Draw(float deltaTime, float totalTime)
 			bullets[i]->Draw(context);
 		}
 	}
+
+	/* Glass Objects (Glass Shader Set) */
+	//glassVertexShader->SetShader();
+	//glassPixelShader->SetShader();
+
+	//glassVertexShader->SetMatrix4x4("view", camera->GetViewMatrix());
+	//glassVertexShader->SetMatrix4x4("projection", camera->GetProjectionMatrix());
+	//glassVertexShader->CopyBufferData("cameraData");
+
+	//glassPixelShader->SetData("light1", &light1, 44);
+	//glassPixelShader->SetData("light2", &light2, 44);
+	//glassPixelShader->CopyBufferData("lightData");
 
 
 	// Present the back buffer to the user

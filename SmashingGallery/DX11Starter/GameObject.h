@@ -47,7 +47,7 @@ public:
 
 
 
-private:
+protected:
 
 	/*Transform Vars*/
 	XMFLOAT4X4 worldMatrix; // The current transform, calculated using pos, rot, and sca

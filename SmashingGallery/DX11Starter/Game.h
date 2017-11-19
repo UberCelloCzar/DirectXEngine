@@ -9,6 +9,8 @@
 #include "Lights.h"
 #include "target.h"
 #include <vector>
+#include "GlassMat.h"
+#include "Glass.h"
 
 class Game 
 	: public DXCore
@@ -40,13 +42,17 @@ private:
 
 	// Meshes to hold actual geometry data
 	Mesh* mesh1;
+	Mesh* mesh2;
 
 	Material* material;
+	GlassMat* glassMaterial;
 	ID3D11ShaderResourceView* shaderResourceView1;
 	ID3D11SamplerState* samplerState1;
+	ID3D11ShaderResourceView* refractShaderResourceView1;
 
 	// Targets for the scene
 	GameObject* targets[3];
+	Glass* glassTarget;
 
 	// The scene camera
 	Camera* camera;
@@ -58,6 +64,9 @@ private:
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
 	SimplePixelShader* pixelShader;
+
+	SimpleVertexShader* glassVertexShader;
+	SimplePixelShader* glassPixelShader;
 
 	// Keeps track of the old mouse position.  Useful for 
 	// determining how far the mouse moved in a single frame.
