@@ -12,7 +12,7 @@
 #include "GlassMat.h"
 #include "Glass.h"
 
-class Game 
+class Game
 	: public DXCore
 {
 
@@ -28,16 +28,16 @@ public:
 	void Draw(float deltaTime, float totalTime);
 
 	// Overridden mouse input helper methods
-	void OnMouseDown (WPARAM buttonState, int x, int y);
-	void OnMouseUp	 (WPARAM buttonState, int x, int y);
-	void OnMouseMove (WPARAM buttonState, int x, int y);
-	void OnMouseWheel(float wheelDelta,   int x, int y);
+	void OnMouseDown(WPARAM buttonState, int x, int y);
+	void OnMouseUp(WPARAM buttonState, int x, int y);
+	void OnMouseMove(WPARAM buttonState, int x, int y);
+	void OnMouseWheel(float wheelDelta, int x, int y);
 
 	int score; // Player score
 private:
 
 	// Initialization helper methods - feel free to customize, combine, etc.
-	void LoadShaders(); 
+	void LoadShaders();
 	void LoadGeometry();
 
 	// Meshes to hold actual geometry data
@@ -45,14 +45,18 @@ private:
 	Mesh* mesh2;
 
 	Material* material;
+	Material* wallMat;
 	GlassMat* glassMaterial;
 	ID3D11ShaderResourceView* shaderResourceView1;
+	ID3D11ShaderResourceView* shaderResourceView2;
 	ID3D11SamplerState* samplerState1;
 	ID3D11ShaderResourceView* normalShaderResourceView1;
+	ID3D11ShaderResourceView* normalShaderResourceView2;
 	ID3D11ShaderResourceView* refractShaderResourceView1;
 
 	// Targets for the scene
 	GameObject* targets[3];
+	GameObject* walls[4];
 	Glass* glassTarget;
 
 	// The scene camera

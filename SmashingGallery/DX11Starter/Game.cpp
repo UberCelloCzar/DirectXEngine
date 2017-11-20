@@ -35,7 +35,7 @@ Game::Game(HINSTANCE hInstance)
 	CreateConsoleWindow(500, 120, 32, 120);
 	printf("Console window created successfully.  Feel free to printf() here.");
 #endif
-	
+
 }
 
 // --------------------------------------------------------
@@ -48,12 +48,15 @@ Game::~Game()
 	// Release any (and all!) DirectX objects
 	// we've made in the Game class
 	delete mesh1;
-	//delete mesh2;
+	delete mesh2;
 	delete camera;
 	delete material;
+	delete wallMat;
 	delete glassMaterial;
 	shaderResourceView1->Release();
-    normalShaderResourceView1->Release();
+	shaderResourceView2->Release();
+	normalShaderResourceView1->Release();
+	normalShaderResourceView2->Release();
 	samplerState1->Release();
 
 	for (int i = 0; i < 20; i++) // Clean up
@@ -64,6 +67,11 @@ Game::~Game()
 	for (int i = 0; i < 3; i++)
 	{
 		delete targets[i];
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		delete walls[5];
 	}
 
 	delete glassTarget;
@@ -91,6 +99,8 @@ void Game::Init()
 
 	CreateWICTextureFromFile(device, context, L"images\\rock.jpg", 0, &shaderResourceView1);
 	CreateWICTextureFromFile(device, context, L"images\\rockNormals.jpg", 0, &normalShaderResourceView1);
+	CreateWICTextureFromFile(device, context, L"images\\wall.jpg", 0, &shaderResourceView2);
+	CreateWICTextureFromFile(device, context, L"images\\wallNormal.jpg", 0, &normalShaderResourceView2);
 	std::cout << normalShaderResourceView1 << std::endl;
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -102,12 +112,58 @@ void Game::Init()
 	device->CreateSamplerState(&samplerDesc, &samplerState1);
 
 	material = new Material(vertexShader, pixelShader, shaderResourceView1, normalShaderResourceView1, samplerState1);
+	wallMat = new Material(vertexShader, pixelShader, shaderResourceView2, normalShaderResourceView2, samplerState1);
 	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView1, normalShaderResourceView1, refractShaderResourceView1, samplerState1);
+
 	targets[0] = new GameObject(mesh1, material, { new target() });
 	targets[1] = new GameObject(mesh1, material, { new target() });
 	targets[2] = new GameObject(mesh1, material, { new target() });
+	walls[0] = new GameObject(mesh2, wallMat, { new Script() });
+	walls[1] = new GameObject(mesh2, wallMat, { new Script() });
+	walls[2] = new GameObject(mesh2, wallMat, { new Script() });
+	walls[3] = new GameObject(mesh2, wallMat, { new Script() });
+	walls[4] = new GameObject(mesh2, wallMat, { new Script() });
+
+
+	targets[0]->SetPosition(0, 1.5f, 0);
+	targets[1]->SetPosition(0, 0, 0);
+	targets[2]->SetPosition(0, -1.5f, 0);
+
+	//back wall
+	walls[0]->SetPosition(0, 0, 5);
+	walls[0]->SetRotation(0, 3.14f, 0);
+	walls[0]->SetScale(7, 7, 7);
+
+	//left wall
+	walls[1]->SetPosition(-5, 0, 0);
+	walls[1]->SetRotation(0, 1.57f, 0);
+	walls[1]->SetScale(7, 7, 7);
+
+	//right wall
+	walls[2]->SetPosition(5, 0, 0);
+	walls[2]->SetRotation(0, -1.57f, 0);
+	walls[2]->SetScale(7, 7, 7);
+
+
+	//ceiling
+	walls[3]->SetPosition(0, 5, 0);
+	walls[3]->SetRotation(1.57f, 0, 0);
+	walls[3]->SetScale(7, 7, 7);
+
+
+	//floor
+	walls[4]->SetPosition(0, -5, 0);
+	walls[4]->SetRotation(-1.57f, 0, 0);
+	walls[4]->SetScale(7, 7, 7);
+
+
+	for (int i = 0; i < 5; i++)
+	{
+		walls[i]->CalculateWorldMatrix();
+	}
+
 	prevMousePos.x = NULL;
-	light1 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, -1.0f, 0.0f)};
+	light1 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, -1.0f, 0.0f) };
 	light2 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) };
 
 	// Tell the input assembler stage of the pipeline what kind of
@@ -120,8 +176,8 @@ void Game::Init()
 
 	for (int i = 0; i < 20; i++) // Initialize the memory pool and the inactive queue
 	{
-		bullets[i] = new GameObject(mesh1, material, {new Bullet()});
-		bullets[i]->SetScale(.3, .3, .3);
+		bullets[i] = new GameObject(mesh1, material, { new Bullet() });
+		bullets[i]->SetScale(0.3f, 0.3f, 0.3f);
 		inactiveBullets[i] = i;
 	}
 	score = 0;
@@ -140,7 +196,7 @@ void Game::LoadShaders()
 
 	pixelShader = new SimplePixelShader(device, context);
 	pixelShader->LoadShaderFile(L"PixelShader.cso");
-	
+
 	glassVertexShader = new SimpleVertexShader(device, context);
 	glassVertexShader->LoadShaderFile(L"GlassVShader.cso");
 
@@ -154,8 +210,9 @@ void Game::LoadShaders()
 void Game::LoadGeometry()
 {
 	mesh1 = new Mesh("models\\sphere.obj", device);
-            head = 0;
-            tail = 0; // Initialize queue tracers
+	mesh2 = new Mesh("models\\quad.obj", device);
+	head = 0;
+	tail = 0; // Initialize queue tracers
 }
 
 
@@ -179,7 +236,6 @@ void Game::Update(float deltaTime, float totalTime)
 	// Quit if the escape key is pressed
 	if (GetAsyncKeyState(VK_ESCAPE))
 		Quit();
-
 	for (int i = 0; i < 20; i++) // Update active bullets
 	{
 		if (dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive)
@@ -218,21 +274,21 @@ void Game::Update(float deltaTime, float totalTime)
 
 	float right = 0;
 	float forward = 0;
-	if (GetAsyncKeyState('A') & 0x8000) 
-	{ 
-		right -= 5*deltaTime;
-	}
-	if (GetAsyncKeyState('D') & 0x8000) 
+	if (GetAsyncKeyState('A') & 0x8000)
 	{
-		right += 5*deltaTime;
+		right -= 5 * deltaTime;
+	}
+	if (GetAsyncKeyState('D') & 0x8000)
+	{
+		right += 5 * deltaTime;
 	}
 	if (GetAsyncKeyState('W') & 0x8000)
 	{
-		forward += 5*deltaTime;
+		forward += 5 * deltaTime;
 	}
 	if (GetAsyncKeyState('S') & 0x8000)
 	{
-		forward -= 5*deltaTime;
+		forward -= 5 * deltaTime;
 	}
 	if (fireCD <= 0)
 	{
@@ -355,9 +411,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		}
 	}
 
-	targets[0]->SetPosition(0, 1.5, 0);
-	targets[1]->SetPosition(0, 0, 0);
-	targets[2]->SetPosition(0, -1.5, 0);
+	for (int i = 0; i < 5; i++)
+	{
+		walls[i]->Draw(context);
+	}
 
 	for (int i = 0; i < 20; i++) // Draw active bullets
 	{
