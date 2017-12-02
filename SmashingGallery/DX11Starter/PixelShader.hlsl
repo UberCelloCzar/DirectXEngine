@@ -15,6 +15,7 @@ struct VertexToPixel
 	float2 uv                 : TEXCOORD;
 	float3 normal		      : NORMAL;
 	float3 tangent		      : TANGENT;
+	float4 shadowMapPosition  : POSITION1;
 };
 
 struct DirectionalLight
@@ -34,6 +35,9 @@ cbuffer lightData : register(b2)
 Texture2D diffuseTexture  : register(t0); 
 SamplerState basicSampler : register(s0);
 Texture2D normalTexture	  : register(t1);
+Texture2D ShadowMap		  : register(t2);
+
+SamplerComparisonState ShadowSampler : register(s0);
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -68,6 +72,22 @@ float4 main(VertexToPixel input) : SV_TARGET
 	NdotL = saturate(dot(input.normal, -light2.Direction));
 	float4 surfaceColor = diffuseTexture.Sample(basicSampler, input.uv);
 
-	return (pixelColor + (light2.AmbientColor + (light2.DiffuseColor * NdotL))) * surfaceColor;
+	float dirLightAmount = saturate(dot(input.normal, -DirLightDirection));
 
+	// Shadows: Calculate how "in shadow" this pixel is
+	float2 shadowUV = input.shadowMapPosition.xy / input.shadowMapPosition.w * 0.5f + 0.5f;
+	shadowUV.y = 1.0f - shadowUV.y; // Flip the Y's
+
+	// Calculate this pixel's actual depth from the light
+	float depthFromLight = input.shadowMapPosition.z / input.shadowMapPosition.w;
+
+	// Actually sample the shadow map
+	float shadowAmount = ShadowMap.SampleCmpLevelZero(
+		ShadowSampler,		// Special "comparison" sampler
+		shadowUV,			// Where in the shadow map to look
+		depthFromLight);	// The depth to compare against
+
+	return (pixelColor + (light2.AmbientColor + (light2.DiffuseColor * NdotL))) * surfaceColor +
+		// Cut the contribution of this light (the one casting shadows)
+		float4(DirLightColor * dirLightAmount, 1) * shadowAmount);
 }

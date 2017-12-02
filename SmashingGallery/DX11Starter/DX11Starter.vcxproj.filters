@@ -125,9 +125,9 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ResourceCompile Include="SmashingGallery.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="SmashingGallery.rc" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>
