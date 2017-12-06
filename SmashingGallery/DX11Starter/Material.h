@@ -15,11 +15,11 @@ public:
 	ID3D11ShaderResourceView* GetShaderResourceView();
 	ID3D11ShaderResourceView* GetNormalShaderResourceView();
 	ID3D11SamplerState* GetSamplerState();
+	ID3D11ShaderResourceView* shaderResourceView;
 
 private:
 	SimpleVertexShader* vertexShader;
 	SimplePixelShader* pixelShader;
-	ID3D11ShaderResourceView* shaderResourceView;
 	ID3D11ShaderResourceView* normalShaderResourceView;
 	ID3D11SamplerState* samplerState;
 };

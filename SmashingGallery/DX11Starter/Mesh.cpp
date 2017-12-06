@@ -168,8 +168,9 @@ Mesh::Mesh(char* objFile, ID3D11Device* device)
 				indices.push_back(vertCounter); vertCounter += 1;
 				indices.push_back(vertCounter); vertCounter += 1;
 			}
-		}
-	}
+	}		}
+
+	CalculateTangents(&verts[0], vertCounter, &indices[0], indexCount);
 
 	// Close the file and create the actual buffers
 	obj.close();
@@ -256,7 +257,7 @@ Mesh::~Mesh()
 	indexBuffer->Release();
 }
 
-void Mesh::CalculateTangents(Vertex* verts, int numVerts, unsigned int* indices, int numIndices) // Calculate the tangents
+void Mesh::CalculateTangents(Vertex* verts, int numVerts, int* indices, int numIndices) // Calculate the tangents
 {
 	for (int i = 0; i < numVerts; i++) // I fthey've changed we don't want residual
 	{

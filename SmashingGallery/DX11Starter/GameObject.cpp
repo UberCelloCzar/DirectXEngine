@@ -26,6 +26,10 @@ GameObject::GameObject(Mesh* meshPtr, Material* matPtr, std::vector<Script*> pSc
 
 
 /*Getters*/
+Mesh* GameObject::GetMesh()
+{
+	return mesh;
+}
 XMFLOAT4X4 GameObject::GetWorldMatrix()
 {
 	return worldMatrix;

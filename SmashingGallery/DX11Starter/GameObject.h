@@ -17,6 +17,7 @@ public:
 	~GameObject();
 
 	/*Getters*/
+	Mesh* GetMesh();
 	XMFLOAT4X4 GetWorldMatrix();
 	XMFLOAT3 GetPosition();
 	XMFLOAT4 GetRotationQuaternion();

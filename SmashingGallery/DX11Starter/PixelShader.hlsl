@@ -37,7 +37,7 @@ SamplerState basicSampler : register(s0);
 Texture2D normalTexture	  : register(t1);
 Texture2D ShadowMap		  : register(t2);
 
-SamplerComparisonState ShadowSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s1);
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -64,21 +64,11 @@ float4 main(VertexToPixel input) : SV_TARGET
 
 	input.normal = normalize(mul(normalFromTexture, TBN)); // Convert to world space and use the normal from the map
 
-	// Diffuse light calculation
-	float NdotL = saturate(dot(input.normal, -light1.Direction));
-
-	float4 pixelColor = light1.AmbientColor + (light1.DiffuseColor * NdotL);
-
-	NdotL = saturate(dot(input.normal, -light2.Direction));
-	float4 surfaceColor = diffuseTexture.Sample(basicSampler, input.uv);
-
-	float dirLightAmount = saturate(dot(input.normal, -DirLightDirection));
-
-	// Shadows: Calculate how "in shadow" this pixel is
+														   // Shadows: Calculate how "in shadow" this pixel is
 	float2 shadowUV = input.shadowMapPosition.xy / input.shadowMapPosition.w * 0.5f + 0.5f;
 	shadowUV.y = 1.0f - shadowUV.y; // Flip the Y's
 
-	// Calculate this pixel's actual depth from the light
+									// Calculate this pixel's actual depth from the light
 	float depthFromLight = input.shadowMapPosition.z / input.shadowMapPosition.w;
 
 	// Actually sample the shadow map
@@ -87,7 +77,17 @@ float4 main(VertexToPixel input) : SV_TARGET
 		shadowUV,			// Where in the shadow map to look
 		depthFromLight);	// The depth to compare against
 
-	return (pixelColor + (light2.AmbientColor + (light2.DiffuseColor * NdotL))) * surfaceColor +
-		// Cut the contribution of this light (the one casting shadows)
-		float4(DirLightColor * dirLightAmount, 1) * shadowAmount);
+	// Diffuse light calculation
+	float NdotL = saturate(dot(input.normal, -light1.Direction)); // First light
+
+	float4 pixelColor = light1.AmbientColor + ((light1.DiffuseColor * NdotL) * shadowAmount);
+
+	NdotL = saturate(dot(input.normal, -light2.Direction)); // Add the second light
+	pixelColor = pixelColor + (light2.AmbientColor + (light2.DiffuseColor * NdotL));
+
+	float4 surfaceColor = diffuseTexture.Sample(basicSampler, input.uv);
+
+
+
+	return pixelColor * surfaceColor;
 }

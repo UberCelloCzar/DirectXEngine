@@ -9,13 +9,13 @@ cbuffer cameraData : register(b0)
 {
 	matrix view;
 	matrix projection;
+	matrix shadowView;
+	matrix shadowProj;
 };
 
 cbuffer perObjectData : register(b1)
 {
 	matrix world;
-	matrix shadowView;
-	matrix shadowProj;
 };
 
 // Struct representing a single vertex worth of data
@@ -79,7 +79,7 @@ VertexToPixel main( VertexShaderInput input )
 	//shadow stuff
 	// Shadows: Calculate where this vertex ended up in the SHADOW MAP itself
 	matrix shadowWVP = mul(mul(world, shadowView), shadowProj);
-	output.shadowMapPosition = mul(float4(input.position, 1.0f), world).xyz;
+	output.shadowMapPosition = mul(float4(input.position, 1.0f), shadowWVP);
 
 	// Then we convert our 3-component position vector to a 4-component vector
 	// and multiply it by our final 4x4 matrix.

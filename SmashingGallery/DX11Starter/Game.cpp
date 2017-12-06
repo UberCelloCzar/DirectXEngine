@@ -27,6 +27,7 @@ Game::Game(HINSTANCE hInstance)
 	// Initialize fields
 	vertexShader = 0;
 	pixelShader = 0;
+	shadowVS = 0;
 	glassVertexShader = 0;
 	glassPixelShader = 0;
 
@@ -57,6 +58,7 @@ Game::~Game()
 	shaderResourceView2->Release();
 	normalShaderResourceView1->Release();
 	normalShaderResourceView2->Release();
+	shaderResourceView3->Release();
 	samplerState1->Release();
 
 	for (int i = 0; i < 20; i++) // Clean up
@@ -69,12 +71,12 @@ Game::~Game()
 		delete targets[i];
 	}
 
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 5; i++)
 	{
-		delete walls[5];
+		delete walls[i];
 	}
 
-	delete glassTarget;
+	//delete glassTarget;
 
 	// Delete our simple shader objects, which
 	// will clean up their own internal DirectX stuff
@@ -101,6 +103,7 @@ void Game::Init()
 	CreateWICTextureFromFile(device, context, L"images\\rockNormals.jpg", 0, &normalShaderResourceView1);
 	CreateWICTextureFromFile(device, context, L"images\\wall.jpg", 0, &shaderResourceView2);
 	CreateWICTextureFromFile(device, context, L"images\\wallNormal.jpg", 0, &normalShaderResourceView2);
+	CreateWICTextureFromFile(device, context, L"images\\ShadowMap.png", 0, &shaderResourceView3);
 	std::cout << normalShaderResourceView1 << std::endl;
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -170,6 +173,22 @@ void Game::Init()
 	shadowRastDesc.SlopeScaledDepthBias = 1.0f;
 	device->CreateRasterizerState(&shadowRastDesc, &shadowRasterizer);
 
+	// Create my shadow map matrices
+	XMMATRIX shadowView = XMMatrixLookAtLH(
+		XMVectorSet(0, 10, -20, 0), // Eye position
+		XMVectorSet(0, 0, 0, 0),	// Looking at (0,0,0)
+		XMVectorSet(0, 1, 0, 0));	// Up (0,1,0)
+
+	XMStoreFloat4x4(&shadowViewMatrix, XMMatrixTranspose(shadowView));
+
+	XMMATRIX shadowProj = XMMatrixOrthographicLH(
+		10.0f,		// Width of the projection in world units
+		10.0f,		// Height of the projection in world units
+		0.1f,		// Near clip
+		100.0f);	// Far clip
+
+	XMStoreFloat4x4(&shadowProjectionMatrix, XMMatrixTranspose(shadowProj));
+
 
 	material = new Material(vertexShader, pixelShader, shaderResourceView1, normalShaderResourceView1, samplerState1);
 	wallMat = new Material(vertexShader, pixelShader, shaderResourceView2, normalShaderResourceView2, samplerState1);
@@ -207,7 +226,7 @@ void Game::Init()
 
 	//ceiling
 	walls[3]->SetPosition(0, 5, 0);
-	walls[3]->SetRotation(1.57f, 0, 0);
+	walls[3]->SetRotation(1.57, 0, 0);
 	walls[3]->SetScale(7, 7, 7);
 
 
@@ -223,7 +242,7 @@ void Game::Init()
 	}
 
 	prevMousePos.x = NULL;
-	light1 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, -1.0f, 0.0f) };
+	light1 = { XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f), XMFLOAT4(0.6f, 0.6f, 0.57f, 1.0f), XMFLOAT3(0.0f, -0.5f, 1.0f) };
 	light2 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) };
 
 	// Tell the input assembler stage of the pipeline what kind of
@@ -262,6 +281,9 @@ void Game::LoadShaders()
 
 	glassPixelShader = new SimplePixelShader(device, context);
 	glassPixelShader->LoadShaderFile(L"GlassPShader.cso");
+
+	shadowVS = new SimpleVertexShader(device, context);
+	shadowVS->LoadShaderFile(L"ShadowVS.cso");
 }
 
 // --------------------------------------------------------
@@ -415,10 +437,10 @@ void Game::RenderShadowMap()
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
 
-	for (unsigned int i = 0; i < targets.size(); i++)
+	for (int i = 0; i < 3; i++)
 	{
 		// Grab the data from the first entity's mesh
-		GameEntity* ge = targets[i];
+		GameObject* ge = targets[i];
 		ID3D11Buffer* vb = ge->GetMesh()->GetVertexBuffer();
 		ID3D11Buffer* ib = ge->GetMesh()->GetIndexBuffer();
 
@@ -427,7 +449,7 @@ void Game::RenderShadowMap()
 		context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
 
 		// Use the SHADOW VERT SHADER
-		shadowVS->SetMatrix4x4("world", *ge->GetWorldMatrix());
+		shadowVS->SetMatrix4x4("world", ge->GetWorldMatrix());
 		shadowVS->CopyAllBufferData();
 
 		// Finally do the actual drawing
@@ -518,16 +540,19 @@ void Game::Draw(float deltaTime, float totalTime)
 	//  - The "SimpleShader" class handles all of that for you.
 	vertexShader->SetMatrix4x4("view", camera->GetViewMatrix());
 	vertexShader->SetMatrix4x4("projection", camera->GetProjectionMatrix());
+	// We need to pass the shadow "creation" matrices in here
+	// so we can reconstruct the shadow map position
+	vertexShader->SetMatrix4x4("shadowView", shadowViewMatrix);
+	vertexShader->SetMatrix4x4("shadowProj", shadowProjectionMatrix);
 	vertexShader->CopyBufferData("cameraData");
 
 	pixelShader->SetData("light1", &light1, 44);
 	pixelShader->SetData("light2", &light2, 44);
 	pixelShader->CopyBufferData("lightData");
+	pixelShader->SetSamplerState("ShadowSampler", shadowSampler);
+	pixelShader->SetShaderResourceView("ShadowMap", shadowSRV);
+	//wallMat->shaderResourceView = shadowSRV;
 
-	// We need to pass the shadow "creation" matrices in here
-	// so we can reconstruct the shadow map position
-	vertexShader->SetMatrix4x4("shadowView", shadowViewMatrix);
-	vertexShader->SetMatrix4x4("shadowProj", shadowProjectionMatrix);
 
 	//has to be updated with the amount of targets added
 	for (int i = 0; i < 3; i++)

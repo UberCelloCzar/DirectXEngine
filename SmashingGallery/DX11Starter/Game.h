@@ -49,6 +49,7 @@ private:
 	GlassMat* glassMaterial;
 	ID3D11ShaderResourceView* shaderResourceView1;
 	ID3D11ShaderResourceView* shaderResourceView2;
+	ID3D11ShaderResourceView* shaderResourceView3;
 	ID3D11SamplerState* samplerState1;
 	ID3D11ShaderResourceView* normalShaderResourceView1;
 	ID3D11ShaderResourceView* normalShaderResourceView2;
