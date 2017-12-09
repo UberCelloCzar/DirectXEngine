@@ -49,11 +49,13 @@ private:
 	GlassMat* glassMaterial;
 	ID3D11ShaderResourceView* shaderResourceView1;
 	ID3D11ShaderResourceView* shaderResourceView2;
-	ID3D11ShaderResourceView* shaderResourceView3;
+	ID3D11ShaderResourceView* renderToTextureSRV;
 	ID3D11SamplerState* samplerState1;
 	ID3D11ShaderResourceView* normalShaderResourceView1;
 	ID3D11ShaderResourceView* normalShaderResourceView2;
 	ID3D11ShaderResourceView* refractShaderResourceView1;
+	ID3D11RenderTargetView* renderTargetView;
+	ID3D11Texture2D* renderToTextureTexture;
 
 	// Targets for the scene
 	GameObject* targets[3];
@@ -67,6 +69,7 @@ private:
 	DirectionalLight light2;
 
 	void RenderShadowMap();
+	void RenderToTexture();
 
 	// Shadow stuff ---------------------------
 	int shadowMapSize;

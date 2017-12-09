@@ -30,6 +30,7 @@ Game::Game(HINSTANCE hInstance)
 	shadowVS = 0;
 	glassVertexShader = 0;
 	glassPixelShader = 0;
+	renderToTextureTexture = 0;
 
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
@@ -58,8 +59,10 @@ Game::~Game()
 	shaderResourceView2->Release();
 	normalShaderResourceView1->Release();
 	normalShaderResourceView2->Release();
-	shaderResourceView3->Release();
+	renderToTextureSRV->Release();
 	samplerState1->Release();
+	renderToTextureTexture->Release();
+	renderTargetView->Release();
 
 	for (int i = 0; i < 20; i++) // Clean up
 	{
@@ -103,8 +106,6 @@ void Game::Init()
 	CreateWICTextureFromFile(device, context, L"images\\rockNormals.jpg", 0, &normalShaderResourceView1);
 	CreateWICTextureFromFile(device, context, L"images\\wall.jpg", 0, &shaderResourceView2);
 	CreateWICTextureFromFile(device, context, L"images\\wallNormal.jpg", 0, &normalShaderResourceView2);
-	CreateWICTextureFromFile(device, context, L"images\\ShadowMap.png", 0, &shaderResourceView3);
-	std::cout << normalShaderResourceView1 << std::endl;
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -113,8 +114,35 @@ void Game::Init()
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, &samplerState1);
-	
+
 	shadowMapSize = 1024;
+
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = shadowMapSize;
+	textureDesc.Height = shadowMapSize;
+	textureDesc.MipLevels = 1;
+	textureDesc.ArraySize = 1;
+	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.MiscFlags = 0;
+	device->CreateTexture2D(&textureDesc, 0, &renderToTextureTexture);
+
+	D3D11_RENDER_TARGET_VIEW_DESC renderTargetViewDesc = {};
+	renderTargetViewDesc.Format = textureDesc.Format;
+	renderTargetViewDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	renderTargetViewDesc.Texture2D.MipSlice = 0;
+	device->CreateRenderTargetView(renderToTextureTexture, &renderTargetViewDesc, &renderTargetView);
+	
+	D3D11_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
+	shaderResourceViewDesc.Format = textureDesc.Format;
+	shaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+	shaderResourceViewDesc.Texture2D.MipLevels = 1;
+	device->CreateShaderResourceView(renderToTextureTexture, &shaderResourceViewDesc, &renderToTextureSRV);
+	
 
 	// Create the actual texture that will be the shadow map
 	D3D11_TEXTURE2D_DESC shadowDesc = {};
@@ -175,7 +203,7 @@ void Game::Init()
 
 	// Create my shadow map matrices
 	XMMATRIX shadowView = XMMatrixLookAtLH(
-		XMVectorSet(0, 10, -20, 0), // Eye position
+		XMVectorSet(0, 4, -10, 0), // Eye position
 		XMVectorSet(0, 0, 0, 0),	// Looking at (0,0,0)
 		XMVectorSet(0, 1, 0, 0));	// Up (0,1,0)
 
@@ -243,7 +271,7 @@ void Game::Init()
 
 	prevMousePos.x = NULL;
 	light1 = { XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f), XMFLOAT4(0.6f, 0.6f, 0.57f, 1.0f), XMFLOAT3(0.0f, -0.5f, 1.0f) };
-	light2 = { XMFLOAT4(0.1f, 0.1f, 0.08f, 1.0f), XMFLOAT4(0.4f, 0.4f, 0.35f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) };
+	light2 = { XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), XMFLOAT4(0.1f, 0.1f, 0.05f, 1.0f), XMFLOAT3(1.0f, 1.0f, 0.0f) };
 
 	// Tell the input assembler stage of the pipeline what kind of
 	// geometric primitives (points, lines or triangles) we want to draw.  
@@ -404,6 +432,60 @@ void Game::Update(float deltaTime, float totalTime)
 
 
 	camera->Update();
+}
+
+void Game::RenderToTexture()
+{
+	context->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
+	const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
+	context->ClearRenderTargetView(renderTargetView, color);
+
+	// Clear the depth buffer.
+	context->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	// Render all of the entities in the scene
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+
+	vertexShader->SetShader();
+	pixelShader->SetShader();
+	// Send data to shader variables
+	//  - Do this ONCE PER OBJECT you're drawing
+	//  - This is actually a complex process of copying data to a local buffer
+	//    and then copying that entire buffer to the GPU.  
+	//  - The "SimpleShader" class handles all of that for you.
+	vertexShader->SetMatrix4x4("view", camera->GetViewMatrix());
+	vertexShader->SetMatrix4x4("projection", camera->GetProjectionMatrix());
+	// We need to pass the shadow "creation" matrices in here
+	// so we can reconstruct the shadow map position
+	vertexShader->SetMatrix4x4("shadowView", shadowViewMatrix);
+	vertexShader->SetMatrix4x4("shadowProj", shadowProjectionMatrix);
+	vertexShader->CopyBufferData("cameraData");
+
+	pixelShader->SetData("light1", &light1, 44);
+	pixelShader->SetData("light2", &light2, 44);
+	pixelShader->CopyBufferData("lightData");
+	pixelShader->SetSamplerState("ShadowSampler", shadowSampler);
+	pixelShader->SetShaderResourceView("ShadowMap", shadowSRV);
+	//wallMat->shaderResourceView = shadowSRV;
+
+
+	//has to be updated with the amount of targets added
+	for (int i = 0; i < 3; i++)
+	{
+		if (dynamic_cast<target*>(targets[i]->scripts[0])->isActive)
+		{
+			targets[i]->Draw(context);
+		}
+	}
+
+	for (int i = 0; i < 5; i++)
+	{
+		walls[i]->Draw(context);
+	}
+
+	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
+
 }
 
 void Game::RenderShadowMap()
