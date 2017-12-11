@@ -4,6 +4,7 @@
 #include "WICTextureLoader.h"
 #include "Bullet.h"
 #include <math.h>
+#include <string>
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -55,6 +56,8 @@ Game::~Game()
 	delete material;
 	delete wallMat;
 	delete glassMaterial;
+	delete spriteBatch;
+	delete font;
 	shaderResourceView1->Release();
 	shaderResourceView2->Release();
 	normalShaderResourceView1->Release();
@@ -102,10 +105,15 @@ void Game::Init()
 	camera = new Camera(width, height);
 	LoadGeometry();
 
+	CreateWICTextureFromFile(device, context, L"images\\ui.jpg", 0, &uiSRV);
 	CreateWICTextureFromFile(device, context, L"images\\rock.jpg", 0, &shaderResourceView1);
 	CreateWICTextureFromFile(device, context, L"images\\rockNormals.jpg", 0, &normalShaderResourceView1);
 	CreateWICTextureFromFile(device, context, L"images\\wall.jpg", 0, &shaderResourceView2);
 	CreateWICTextureFromFile(device, context, L"images\\wallNormal.jpg", 0, &normalShaderResourceView2);
+
+	//load and set UI stuff
+	spriteBatch = new SpriteBatch(context);
+	font = new SpriteFont(device, L"Fonts/Arial.spritefont");
 
 	D3D11_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -670,6 +678,39 @@ void Game::Draw(float deltaTime, float totalTime)
 	//glassPixelShader->SetData("light2", &light2, 44);
 	//glassPixelShader->CopyBufferData("lightData");
 
+
+	// Check out the texture that is stored in the font
+	ID3D11ShaderResourceView* fontTexture;
+	font->GetSpriteSheet(&fontTexture);
+
+	//rectangles for backgrounds
+	RECT scoreRect = { 0, this->height - 100, 200, this->height };
+	//RECT timeRect = { this->width - 200, this->height - 100, this->width, this->height };
+
+	// Begin, draw, and then end the sprite batch
+	spriteBatch->Begin();
+	spriteBatch->Draw(uiSRV, scoreRect);
+	//spriteBatch->Draw(uiSRV, timeRect);
+	font->DrawString(
+		spriteBatch,
+		L"Score:",
+		XMFLOAT2(0, this->height - 100));
+	font->DrawString(
+		spriteBatch,
+		(std::to_wstring(score)).c_str(),
+		XMFLOAT2(80, this->height - 50));
+
+	spriteBatch->End();
+
+	// Release the new reference we just made
+	// to the font texture (a few lines above)
+	fontTexture->Release();
+
+	// Reset changes from spritebatch for next frame
+	float blendFactors[4] = { 1,1,1,1 };
+	context->OMSetBlendState(0, blendFactors, 0xFFFFFFFF);
+	context->RSSetState(0);
+	context->OMSetDepthStencilState(0, 0);
 
 	// Present the back buffer to the user
 	//  - Puts the final frame we're drawing into the window so the user can see it

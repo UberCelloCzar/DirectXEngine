@@ -1,7 +1,10 @@
-﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(387,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (DX11Starter.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(387,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (DX11Starter.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   Game.cpp
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(257): warning C4305: 'argument': truncation from 'double' to 'float'
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(546): warning C4244: '=': conversion from 'unsigned int' to 'FLOAT', possible loss of data
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(547): warning C4244: '=': conversion from 'unsigned int' to 'FLOAT', possible loss of data
-  DX11Starter.vcxproj -> D:\Documents\RIT 2171\GGP\DirectXEngine\SmashingGallery\x64\Debug\SmashingGallery.exe
-  DX11Starter.vcxproj -> D:\Documents\RIT 2171\GGP\DirectXEngine\SmashingGallery\x64\Debug\SmashingGallery.pdb (Partial PDB)
+c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(265): warning C4305: 'argument': truncation from 'double' to 'float'
+c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(554): warning C4244: '=': conversion from 'unsigned int' to 'FLOAT', possible loss of data
+c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(555): warning C4244: '=': conversion from 'unsigned int' to 'FLOAT', possible loss of data
+c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(687): warning C4838: conversion from 'unsigned int' to 'LONG' requires a narrowing conversion
+c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(697): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(701): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+  DX11Starter.vcxproj -> C:\Users\jreco\OneDrive\Documents\GitHub\DirectXEngine\SmashingGallery\x64\Debug\SmashingGallery.exe
+  DX11Starter.vcxproj -> C:\Users\jreco\OneDrive\Documents\GitHub\DirectXEngine\SmashingGallery\x64\Debug\SmashingGallery.pdb (Partial PDB)

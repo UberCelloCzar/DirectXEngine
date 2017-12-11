@@ -11,6 +11,8 @@
 #include <vector>
 #include "GlassMat.h"
 #include "Glass.h"
+#include "SpriteBatch.h"
+#include "SpriteFont.h"
 
 class Game
 	: public DXCore
@@ -44,9 +46,14 @@ private:
 	Mesh* mesh1;
 	Mesh* mesh2;
 
+	//for UI
+	DirectX::SpriteBatch* spriteBatch;
+	DirectX::SpriteFont* font;
+
 	Material* material;
 	Material* wallMat;
 	GlassMat* glassMaterial;
+	ID3D11ShaderResourceView* uiSRV;
 	ID3D11ShaderResourceView* shaderResourceView1;
 	ID3D11ShaderResourceView* shaderResourceView2;
 	ID3D11ShaderResourceView* renderToTextureSRV;
