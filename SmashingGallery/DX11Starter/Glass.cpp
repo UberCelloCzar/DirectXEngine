@@ -14,6 +14,7 @@ int Glass::Draw(ID3D11DeviceContext* context)
 	material->GetVertexShader()->CopyBufferData("perObjectData");
 	material->GetPixelShader()->SetSamplerState("basicSampler", material->GetSamplerState());
 	material->GetPixelShader()->SetShaderResourceView("diffuseTexture", material->GetShaderResourceView());
+	material->GetPixelShader()->SetShaderResourceView("normalTexture", material->GetNormalShaderResourceView());
 	material->GetPixelShader()->SetShaderResourceView("refractionTexture", ((GlassMat*)material)->GetRefractionShaderResourceView());
 	material->GetPixelShader()->SetData("refractionScale", &refractionScale, 4);
 	material->GetPixelShader()->SetData("padding", &padding, 12);

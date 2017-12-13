@@ -60,6 +60,7 @@ Game::~Game()
 	delete font;
 	shaderResourceView1->Release();
 	shaderResourceView2->Release();
+	shaderResourceView3->Release();
 	normalShaderResourceView1->Release();
 	normalShaderResourceView2->Release();
 	renderToTextureSRV->Release();
@@ -76,6 +77,7 @@ Game::~Game()
 	{
 		delete targets[i];
 	}
+	delete glassTarget;
 
 	for (int i = 0; i < 5; i++)
 	{
@@ -110,6 +112,7 @@ void Game::Init()
 	CreateWICTextureFromFile(device, context, L"images\\rockNormals.jpg", 0, &normalShaderResourceView1);
 	CreateWICTextureFromFile(device, context, L"images\\wall.jpg", 0, &shaderResourceView2);
 	CreateWICTextureFromFile(device, context, L"images\\wallNormal.jpg", 0, &normalShaderResourceView2);
+	CreateWICTextureFromFile(device, context, L"images\\GlassClear.png", 0, &shaderResourceView3);
 
 	//load and set UI stuff
 	spriteBatch = new SpriteBatch(context);
@@ -126,8 +129,8 @@ void Game::Init()
 	shadowMapSize = 1024;
 
 	D3D11_TEXTURE2D_DESC textureDesc = {};
-	textureDesc.Width = shadowMapSize;
-	textureDesc.Height = shadowMapSize;
+	textureDesc.Width = width;
+	textureDesc.Height = height;
 	textureDesc.MipLevels = 1;
 	textureDesc.ArraySize = 1;
 	textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -228,7 +231,7 @@ void Game::Init()
 
 	material = new Material(vertexShader, pixelShader, shaderResourceView1, normalShaderResourceView1, samplerState1);
 	wallMat = new Material(vertexShader, pixelShader, shaderResourceView2, normalShaderResourceView2, samplerState1);
-	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView1, normalShaderResourceView1, refractShaderResourceView1, samplerState1);
+	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView3, normalShaderResourceView1, renderToTextureSRV, samplerState1);
 
 	targets[0] = new GameObject(mesh1, material, { new target() });
 	targets[1] = new GameObject(mesh1, material, { new target() });
@@ -238,11 +241,16 @@ void Game::Init()
 	walls[2] = new GameObject(mesh2, wallMat, { new Script() });
 	walls[3] = new GameObject(mesh2, wallMat, { new Script() });
 	walls[4] = new GameObject(mesh2, wallMat, { new Script() });
+	glassTarget = new Glass(mesh1, glassMaterial, { new target() });
 
 
 	targets[0]->SetPosition(0, 1.5f, 0);
 	targets[1]->SetPosition(0, 0, 0);
 	targets[2]->SetPosition(0, -1.5f, 0);
+	glassTarget->SetPosition(0, 1.5f, 0);
+	//glassTarget->SetScale(.5f, .5f, .5f);
+	//glassTarget->SetRotation(90.0f, 0, 0);
+	//glassTarget->CalculateWorldMatrix();
 
 	//back wall
 	walls[0]->SetPosition(0, 0, 5);
@@ -350,9 +358,6 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
-	// Before we do anything the user can see, render
-	// the shadow map from the light's point of view
-	RenderShadowMap();
 
 	// Quit if the escape key is pressed
 	if (GetAsyncKeyState(VK_ESCAPE))
@@ -436,6 +441,12 @@ void Game::Update(float deltaTime, float totalTime)
 			targets[i]->SetPosition(sin(totalTime * 1.6f + (2 * i)) * 2, targets[i]->GetPosition().y, targets[i]->GetPosition().z);
 			if (targets[i]->GetChanged()) { targets[i]->CalculateWorldMatrix(); }
 		}
+	}
+
+	if (dynamic_cast<target*>(glassTarget->scripts[0])->isActive)
+	{
+		glassTarget->SetPosition(sin(totalTime * 1.6f) * 2, glassTarget->GetPosition().y, glassTarget->GetPosition().z);
+		if (glassTarget->GetChanged()) { glassTarget->CalculateWorldMatrix(); }
 	}
 
 
@@ -529,21 +540,24 @@ void Game::RenderShadowMap()
 
 	for (int i = 0; i < 3; i++)
 	{
-		// Grab the data from the first entity's mesh
-		GameObject* ge = targets[i];
-		ID3D11Buffer* vb = ge->GetMesh()->GetVertexBuffer();
-		ID3D11Buffer* ib = ge->GetMesh()->GetIndexBuffer();
+		if (dynamic_cast<target*>(targets[i]->scripts[0])->isActive)
+		{
+			// Grab the data from the first entity's mesh
+			GameObject* ge = targets[i];
+			ID3D11Buffer* vb = ge->GetMesh()->GetVertexBuffer();
+			ID3D11Buffer* ib = ge->GetMesh()->GetIndexBuffer();
 
-		// Set buffers in the input assembler
-		context->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
-		context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
+			// Set buffers in the input assembler
+			context->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
+			context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
 
-		// Use the SHADOW VERT SHADER
-		shadowVS->SetMatrix4x4("world", ge->GetWorldMatrix());
-		shadowVS->CopyAllBufferData();
+			// Use the SHADOW VERT SHADER
+			shadowVS->SetMatrix4x4("world", ge->GetWorldMatrix());
+			shadowVS->CopyAllBufferData();
 
-		// Finally do the actual drawing
-		context->DrawIndexed(ge->GetMesh()->GetIndexCount(), 0, 0);
+			// Finally do the actual drawing
+			context->DrawIndexed(ge->GetMesh()->GetIndexCount(), 0, 0);
+		}
 	}
 
 	// Now that shadow rendering is done, put back all
@@ -607,6 +621,12 @@ void Game::Fire() // Fires a bullet
 // --------------------------------------------------------
 void Game::Draw(float deltaTime, float totalTime)
 {
+
+	// Before we do anything the user can see, render
+	// the shadow map from the light's point of view
+	RenderShadowMap();
+
+	RenderToTexture();
 	// Background color (Cornflower Blue in this case) for clearing
 	const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
 
@@ -641,7 +661,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	pixelShader->CopyBufferData("lightData");
 	pixelShader->SetSamplerState("ShadowSampler", shadowSampler);
 	pixelShader->SetShaderResourceView("ShadowMap", shadowSRV);
-	//wallMat->shaderResourceView = shadowSRV;
+	//wallMat->shaderResourceView = renderToTextureSRV;
 
 
 	//has to be updated with the amount of targets added
@@ -665,19 +685,25 @@ void Game::Draw(float deltaTime, float totalTime)
 			bullets[i]->Draw(context);
 		}
 	}
+	//wallMat->shaderResourceView = shaderResourceView2;
 
 	/* Glass Objects (Glass Shader Set) */
-	//glassVertexShader->SetShader();
-	//glassPixelShader->SetShader();
+	glassVertexShader->SetShader();
+	glassPixelShader->SetShader();
 
-	//glassVertexShader->SetMatrix4x4("view", camera->GetViewMatrix());
-	//glassVertexShader->SetMatrix4x4("projection", camera->GetProjectionMatrix());
-	//glassVertexShader->CopyBufferData("cameraData");
+	glassVertexShader->SetMatrix4x4("view", camera->GetViewMatrix());
+	glassVertexShader->SetMatrix4x4("projection", camera->GetProjectionMatrix());
+	glassVertexShader->CopyBufferData("cameraData");
 
-	//glassPixelShader->SetData("light1", &light1, 44);
-	//glassPixelShader->SetData("light2", &light2, 44);
-	//glassPixelShader->CopyBufferData("lightData");
+	glassPixelShader->SetData("light1", &light1, 44);
+	glassPixelShader->SetData("light2", &light2, 44);
+	glassPixelShader->CopyBufferData("lightData");
 
+
+	if (dynamic_cast<target*>(glassTarget->scripts[0])->isActive)
+	{
+		glassTarget->Draw(context);
+	}
 
 	// Check out the texture that is stored in the font
 	ID3D11ShaderResourceView* fontTexture;
