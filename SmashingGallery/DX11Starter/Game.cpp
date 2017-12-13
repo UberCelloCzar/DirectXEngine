@@ -56,6 +56,7 @@ Game::~Game()
 	delete camera;
 	delete material;
 	delete wallMat;
+	delete bulletMaterial;
 	delete specialWallMat;
 	delete glassMaterial;
 	delete glassMaterial2;
@@ -64,20 +65,20 @@ Game::~Game()
 	particleTexture->Release();
 	particleBlendState->Release();
 	particleDepthState->Release();
-	shaderResourceView1->Release();
-	shaderResourceView2->Release();
-	shaderResourceView3->Release();
-	normalShaderResourceView1->Release();
-	normalShaderResourceView2->Release();
-	normalShaderResourceView3->Release();
-	normalShaderResourceView4->Release();
+
+	for (int i = 0; i < 4; i++)
+	{
+		shaderResourceViews[i]->Release();
+	}
+
+	for (int i = 0; i < 5; i++)
+	{
+		normalShaderResourceViews[i]->Release();
+	}
 	renderToTextureSRV->Release();
 	samplerState1->Release();
 	renderToTextureTexture->Release();
 	renderTargetView->Release();
-	particleSampler->Release();
-	particleTextureSRV->Release();
-	particleNormalMapSRV->Release();
 
 	for (int i = 0; i < 20; i++) // Clean up
 	{
@@ -126,15 +127,17 @@ void Game::Init()
 	LoadGeometry();
 
 	CreateWICTextureFromFile(device, context, L"images\\ui.jpg", 0, &uiSRV);
-	CreateWICTextureFromFile(device, context, L"images\\rock.jpg", 0, &shaderResourceView1);
-	CreateWICTextureFromFile(device, context, L"images\\rockNormals.jpg", 0, &normalShaderResourceView1);
-	CreateWICTextureFromFile(device, context, L"images\\wall.jpg", 0, &shaderResourceView2);
-	CreateWICTextureFromFile(device, context, L"images\\wallNormal.jpg", 0, &normalShaderResourceView2);
-	CreateWICTextureFromFile(device, context, L"images\\GlassClear.png", 0, &shaderResourceView3);
-	CreateWICTextureFromFile(device, context, L"images\\GlassNormalRough.png", 0, &normalShaderResourceView3);
-	CreateWICTextureFromFile(device, context, L"images\\GlassNormal.png", 0, &normalShaderResourceView4);
+	CreateWICTextureFromFile(device, context, L"images\\rock.jpg", 0, &shaderResourceViews[0]);
+	CreateWICTextureFromFile(device, context, L"images\\rockNormals.jpg", 0, &normalShaderResourceViews[0]);
+	CreateWICTextureFromFile(device, context, L"images\\wall.jpg", 0, &shaderResourceViews[1]);
+	CreateWICTextureFromFile(device, context, L"images\\wallNormal.jpg", 0, &normalShaderResourceViews[1]);
+	CreateWICTextureFromFile(device, context, L"images\\GlassClear.png", 0, &shaderResourceViews[2]);
+	CreateWICTextureFromFile(device, context, L"images\\GlassNormalRough.png", 0, &normalShaderResourceViews[2]);
+	CreateWICTextureFromFile(device, context, L"images\\GlassNormal.png", 0, &normalShaderResourceViews[3]);
 	CreateWICTextureFromFile(device, context, L"images\\particle.jpg", 0, &particleTexture);
 	CreateWICTextureFromFile(device, context, L"images\\shootingGallery.jpg", 0, &shootingGalleryTexture);
+	CreateWICTextureFromFile(device, context, L"images\\SnowTexture.tif", 0, &shaderResourceViews[3]);
+	CreateWICTextureFromFile(device, context, L"images\\SnowNormal.tif", 0, &normalShaderResourceViews[4]);
 
 	//load and set UI stuff
 	spriteBatch = new SpriteBatch(context);
@@ -168,36 +171,17 @@ void Game::Init()
 	blend.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	device->CreateBlendState(&blend, &particleBlendState);
 
-	D3D11_SAMPLER_DESC particleSamplerDesc = {};
-	particleSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	particleSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	particleSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	particleSamplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
-	particleSamplerDesc.MaxAnisotropy = 16;
-	particleSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	// Ask the device to create a state
-	device->CreateSamplerState(&particleSamplerDesc, &particleSampler);
-	
-	HRESULT result = CreateWICTextureFromFile(
-		device,
-		context, // If I provide the context, it will auto-generate Mipmaps
-		L"images\\rock.jpg",
-		0, // We don't actually need the texture reference
-		&particleTextureSRV);
-	CreateWICTextureFromFile(device, context, L"images\\rockNormals.jpg", 0, &particleNormalMapSRV);
-
 	emitter = new Emitter(
-		10, //max particles			
-		100, //particles per second
-		5, //partice lifetime
-		0.1f, //start size
-		5.0f, // end size
-		XMFLOAT4(1, 0.1f, 0.1f, 0.2f), // start color
-		XMFLOAT4(1, 0.6f, 0.1f, 0),	 // end color
-		XMFLOAT3(-2, 2, 0), // start velocity
-		XMFLOAT3(2, 0, 0), // start position
-		XMFLOAT3(0, -1, 0), // start acceleration
+		1000,							// Max particles
+		100,							// Particles per second
+		5,								// Particle lifetime
+		0.1f,							// Start size
+		5.0f,							// End size
+		XMFLOAT4(1, 0.1f, 0.1f, 0.2f),	// Start color
+		XMFLOAT4(1, 0.6f, 0.1f, 0),		// End color
+		XMFLOAT3(-2, 2, 0),				// Start velocity
+		XMFLOAT3(2, 0, 0),				// Start position
+		XMFLOAT3(0, -1, 0),				// Start acceleration
 		device, particleVertexShader, particlePixelShader, particleTexture);
 
 
@@ -306,11 +290,12 @@ void Game::Init()
 	XMStoreFloat4x4(&shadowProjectionMatrix, XMMatrixTranspose(shadowProj));
 
 
-	material = new Material(vertexShader, pixelShader, shaderResourceView1, normalShaderResourceView1, samplerState1);
-	wallMat = new Material(vertexShader, pixelShader, shaderResourceView2, normalShaderResourceView2, samplerState1);
-	specialWallMat = new Material(vertexShader, pixelShader, shootingGalleryTexture, normalShaderResourceView2, samplerState1);
-	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView3, normalShaderResourceView3, renderToTextureSRV, samplerState1);
-	glassMaterial2 = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView3, normalShaderResourceView4, renderToTextureSRV, samplerState1);
+	material = new Material(vertexShader, pixelShader, shaderResourceViews[0], normalShaderResourceViews[0], samplerState1);
+	wallMat = new Material(vertexShader, pixelShader, shaderResourceViews[1], normalShaderResourceViews[1], samplerState1);
+	specialWallMat = new Material(vertexShader, pixelShader, shootingGalleryTexture, normalShaderResourceViews[1], samplerState1);
+	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceViews[2], normalShaderResourceViews[2], renderToTextureSRV, samplerState1);
+	glassMaterial2 = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceViews[2], normalShaderResourceViews[3], renderToTextureSRV, samplerState1);
+	bulletMaterial = new Material(vertexShader, pixelShader, shaderResourceViews[3], normalShaderResourceViews[4], samplerState1);
 
 	targets[0] = new GameObject(mesh1, material, { new target() });
 	targets[1] = new GameObject(mesh1, material, { new target() });
@@ -377,7 +362,7 @@ void Game::Init()
 
 	for (int i = 0; i < 20; i++) // Initialize the memory pool and the inactive queue
 	{
-		bullets[i] = new GameObject(mesh1, material, { new Bullet() });
+		bullets[i] = new GameObject(mesh1, bulletMaterial, { new Bullet() });
 		bullets[i]->SetScale(0.3f, 0.3f, 0.3f);
 		inactiveBullets[i] = i;
 	}
@@ -424,12 +409,6 @@ void Game::LoadGeometry()
 	mesh3 = new Mesh("models\\cube.obj", device);
 	head = 0;
 	tail = 0; // Initialize queue tracers
-
-
-			  // Make some entities
-	entity = new GameEntity(mesh1);
-
-	entity->SetScale(0.1f, 0.1f, 0.1f);;
 
 }
 
@@ -502,7 +481,6 @@ void Game::Update(float deltaTime, float totalTime)
 		}
 
 		emitter->Update(deltaTime);
-		entity->UpdateWorldMatrix();
 
 	}
 
@@ -799,6 +777,15 @@ void Game::Draw(float deltaTime, float totalTime)
 	}
 	//wallMat->shaderResourceView = shaderResourceView2;
 
+	//particles draw
+	float blend[4] = { 1,1,1,1 };
+	context->OMSetBlendState(particleBlendState, blend, 0xffffffff);
+	context->OMSetDepthStencilState(particleDepthState, 0);
+	emitter->Draw(context, camera);
+	context->OMSetBlendState(0, blend, 0xffffffff);
+	context->OMSetDepthStencilState(0, 0);
+	
+
 	/* Glass Objects (Glass Shader Set) */
 	glassVertexShader->SetShader();
 	glassPixelShader->SetShader();
@@ -810,35 +797,6 @@ void Game::Draw(float deltaTime, float totalTime)
 	glassPixelShader->SetData("light1", &light1, 44);
 	glassPixelShader->SetData("light2", &light2, 44);
 	glassPixelShader->CopyBufferData("lightData");
-
-	/*
-	//particles draw
-	ID3D11Buffer* vb = entity->GetMesh()->GetVertexBuffer();
-	ID3D11Buffer* ib = entity->GetMesh()->GetIndexBuffer();
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	context->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
-	context->IASetIndexBuffer(ib, DXGI_FORMAT_R32_UINT, 0);
-	vertexShader->SetMatrix4x4("world", *entity->GetWorldMatrix());
-	vertexShader->CopyAllBufferData();
-	vertexShader->SetShader();
-	pixelShader->SetSamplerState("Sampler", particleSampler);
-	pixelShader->SetShaderResourceView("diffuseTexture", particleTextureSRV);
-	pixelShader->SetShaderResourceView("normalTexture", particleNormalMapSRV);
-	pixelShader->CopyAllBufferData();
-	pixelShader->SetShader();
-	context->DrawIndexed(entity->GetMesh()->GetIndexCount(), 0, 0);
-	float blend[4] = { 1,1,1,1 };
-	context->OMSetBlendState(particleBlendState, blend, 0xffffffff);
-	context->OMSetDepthStencilState(particleDepthState, 0);
-	emitter->Draw(context, camera);
-	context->OMSetBlendState(0, blend, 0xffffffff);
-	context->OMSetDepthStencilState(0, 0);
-	*/
-
-
-
-
 
 	for (int i = 0; i < 2; i++)
 	{

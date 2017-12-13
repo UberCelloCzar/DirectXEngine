@@ -13,7 +13,6 @@
 #include "Glass.h"
 #include "SpriteBatch.h"
 #include "SpriteFont.h"
-#include "GameEntity.h"
 #include "Emitter.h"
 
 class Game
@@ -47,10 +46,6 @@ private:
 	ID3D11DepthStencilState* particleDepthState;
 	ID3D11BlendState* particleBlendState;
 	Emitter* emitter;
-	GameEntity* entity;
-	ID3D11SamplerState* particleSampler;
-	ID3D11ShaderResourceView* particleTextureSRV;
-	ID3D11ShaderResourceView* particleNormalMapSRV;
 
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders();
@@ -68,18 +63,14 @@ private:
 	Material* material;
 	Material* wallMat;
 	Material* specialWallMat;
+	Material* bulletMaterial;
 	GlassMat* glassMaterial;
 	GlassMat* glassMaterial2;
 	ID3D11ShaderResourceView* uiSRV;
-	ID3D11ShaderResourceView* shaderResourceView1;
-	ID3D11ShaderResourceView* shaderResourceView2;
-	ID3D11ShaderResourceView* shaderResourceView3;
+	ID3D11ShaderResourceView* shaderResourceViews[4];
 	ID3D11ShaderResourceView* renderToTextureSRV;
 	ID3D11SamplerState* samplerState1;
-	ID3D11ShaderResourceView* normalShaderResourceView1;
-	ID3D11ShaderResourceView* normalShaderResourceView2;
-	ID3D11ShaderResourceView* normalShaderResourceView3;
-	ID3D11ShaderResourceView* normalShaderResourceView4;
+	ID3D11ShaderResourceView* normalShaderResourceViews[5];
 	ID3D11RenderTargetView* renderTargetView;
 	ID3D11Texture2D* renderToTextureTexture;
 	ID3D11ShaderResourceView* shootingGalleryTexture;
