@@ -45,6 +45,7 @@ private:
 	// Meshes to hold actual geometry data
 	Mesh* mesh1;
 	Mesh* mesh2;
+	Mesh* mesh3;
 
 	//for UI
 	DirectX::SpriteBatch* spriteBatch;
@@ -53,6 +54,7 @@ private:
 	Material* material;
 	Material* wallMat;
 	GlassMat* glassMaterial;
+	GlassMat* glassMaterial2;
 	ID3D11ShaderResourceView* uiSRV;
 	ID3D11ShaderResourceView* shaderResourceView1;
 	ID3D11ShaderResourceView* shaderResourceView2;
@@ -61,13 +63,15 @@ private:
 	ID3D11SamplerState* samplerState1;
 	ID3D11ShaderResourceView* normalShaderResourceView1;
 	ID3D11ShaderResourceView* normalShaderResourceView2;
+	ID3D11ShaderResourceView* normalShaderResourceView3;
+	ID3D11ShaderResourceView* normalShaderResourceView4;
 	ID3D11RenderTargetView* renderTargetView;
 	ID3D11Texture2D* renderToTextureTexture;
 
 	// Targets for the scene
 	GameObject* targets[3];
 	GameObject* walls[5];
-	Glass* glassTarget;
+	Glass* glassTargets[2];
 
 	// The scene camera
 	Camera* camera;

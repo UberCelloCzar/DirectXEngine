@@ -49,8 +49,8 @@ struct VertexToPixel
 	float4 position		      : SV_POSITION;	// XYZW position (System Value Position)
 	float4 refractionPosition : TEXCOORD;
 	float2 uv                 : TEXCOORD1;
-	float3 normal		      : TEXCOORD2;
-	float3 tangent		      : TEXCOORD3;
+	float3 normal		      : NORMAL;
+	float3 tangent		      : TANGENT;
 
 };
 
@@ -65,8 +65,6 @@ VertexToPixel main(VertexShaderInput input)
 {
 	// Set up output struct
 	VertexToPixel output;
-	matrix viewProjectWorld = mul(world, mul(view, projection)); // View projection matrix for refraction
-	output.refractionPosition = mul(float4(input.position, 1.0f), viewProjectWorld);
 
 	// The vertex's position (input.position) must be converted to world space,
 	// then camera space (relative to our 3D camera), then to proper homogenous 
@@ -83,6 +81,10 @@ VertexToPixel main(VertexShaderInput input)
 	// The result is essentially the position (XY) of the vertex on our 2D 
 	// screen and the distance (Z) from the camera (the "depth" of the pixel)
 	output.position = mul(float4(input.position, 1.0f), worldViewProj);
+
+	matrix viewProjectWorld = mul(world, mul(view, projection)); // View projection matrix for refraction
+	output.refractionPosition = mul(float4(input.position, 1.0f), viewProjectWorld);
+
 	// Cast the world matrix to a 3x3 – removing translation
 	// Multiply the input normal by the 3x3 world
 	output.normal = mul(input.normal, (float3x3)world);

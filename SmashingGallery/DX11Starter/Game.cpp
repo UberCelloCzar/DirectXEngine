@@ -52,10 +52,12 @@ Game::~Game()
 	// we've made in the Game class
 	delete mesh1;
 	delete mesh2;
+	delete mesh3;
 	delete camera;
 	delete material;
 	delete wallMat;
 	delete glassMaterial;
+	delete glassMaterial2;
 	delete spriteBatch;
 	delete font;
 	shaderResourceView1->Release();
@@ -63,6 +65,8 @@ Game::~Game()
 	shaderResourceView3->Release();
 	normalShaderResourceView1->Release();
 	normalShaderResourceView2->Release();
+	normalShaderResourceView3->Release();
+	normalShaderResourceView4->Release();
 	renderToTextureSRV->Release();
 	samplerState1->Release();
 	renderToTextureTexture->Release();
@@ -77,7 +81,11 @@ Game::~Game()
 	{
 		delete targets[i];
 	}
-	delete glassTarget;
+
+	for (int i = 0; i < 2; i++)
+	{
+		delete glassTargets[i];
+	}
 
 	for (int i = 0; i < 5; i++)
 	{
@@ -113,6 +121,8 @@ void Game::Init()
 	CreateWICTextureFromFile(device, context, L"images\\wall.jpg", 0, &shaderResourceView2);
 	CreateWICTextureFromFile(device, context, L"images\\wallNormal.jpg", 0, &normalShaderResourceView2);
 	CreateWICTextureFromFile(device, context, L"images\\GlassClear.png", 0, &shaderResourceView3);
+	CreateWICTextureFromFile(device, context, L"images\\GlassNormalRough.png", 0, &normalShaderResourceView3);
+	CreateWICTextureFromFile(device, context, L"images\\GlassNormal.png", 0, &normalShaderResourceView4);
 
 	//load and set UI stuff
 	spriteBatch = new SpriteBatch(context);
@@ -231,7 +241,8 @@ void Game::Init()
 
 	material = new Material(vertexShader, pixelShader, shaderResourceView1, normalShaderResourceView1, samplerState1);
 	wallMat = new Material(vertexShader, pixelShader, shaderResourceView2, normalShaderResourceView2, samplerState1);
-	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView3, normalShaderResourceView1, renderToTextureSRV, samplerState1);
+	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView3, normalShaderResourceView3, renderToTextureSRV, samplerState1);
+	glassMaterial2 = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceView3, normalShaderResourceView4, renderToTextureSRV, samplerState1);
 
 	targets[0] = new GameObject(mesh1, material, { new target() });
 	targets[1] = new GameObject(mesh1, material, { new target() });
@@ -241,16 +252,15 @@ void Game::Init()
 	walls[2] = new GameObject(mesh2, wallMat, { new Script() });
 	walls[3] = new GameObject(mesh2, wallMat, { new Script() });
 	walls[4] = new GameObject(mesh2, wallMat, { new Script() });
-	glassTarget = new Glass(mesh1, glassMaterial, { new target() });
+	glassTargets[0] = new Glass(mesh1, glassMaterial, { new target() });
+	glassTargets[1] = new Glass(mesh3, glassMaterial2, { new target() });
 
 
 	targets[0]->SetPosition(0, 1.5f, 0);
 	targets[1]->SetPosition(0, 0, 0);
 	targets[2]->SetPosition(0, -1.5f, 0);
-	glassTarget->SetPosition(0, 1.5f, 0);
-	//glassTarget->SetScale(.5f, .5f, .5f);
-	//glassTarget->SetRotation(90.0f, 0, 0);
-	//glassTarget->CalculateWorldMatrix();
+	glassTargets[0]->SetPosition(0, 1.0f, -1.0f);
+	glassTargets[1]->SetPosition(0, -.8f, 1.0f);
 
 	//back wall
 	walls[0]->SetPosition(0, 0, 5);
@@ -337,6 +347,7 @@ void Game::LoadGeometry()
 {
 	mesh1 = new Mesh("models\\sphere.obj", device);
 	mesh2 = new Mesh("models\\quad.obj", device);
+	mesh3 = new Mesh("models\\cube.obj", device);
 	head = 0;
 	tail = 0; // Initialize queue tracers
 }
@@ -375,6 +386,19 @@ void Game::Update(float deltaTime, float totalTime)
 					{
 						dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive = false;
 						dynamic_cast<target*>(targets[j]->scripts[0])->isActive = false;
+						score += 1;
+						std::cout << score << std::endl;
+					}
+				}
+			}
+			for (int j = 0; j < 2; j++) // Checks this bullet against all targets (will turn into octree if extra performance is needed later)
+			{
+				if (dynamic_cast<target*>(glassTargets[j]->scripts[0])->isActive)
+				{
+					if (bullets[i]->collider.collidesWith(*bullets[i], *glassTargets[j]))
+					{
+						dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive = false;
+						dynamic_cast<target*>(glassTargets[j]->scripts[0])->isActive = false;
 						score += 1;
 						std::cout << score << std::endl;
 					}
@@ -443,10 +467,13 @@ void Game::Update(float deltaTime, float totalTime)
 		}
 	}
 
-	if (dynamic_cast<target*>(glassTarget->scripts[0])->isActive)
+	for (int i = 0; i < 2; i++)
 	{
-		glassTarget->SetPosition(sin(totalTime * 1.6f) * 2, glassTarget->GetPosition().y, glassTarget->GetPosition().z);
-		if (glassTarget->GetChanged()) { glassTarget->CalculateWorldMatrix(); }
+		if (dynamic_cast<target*>(glassTargets[i]->scripts[0])->isActive)
+		{
+			glassTargets[i]->SetPosition(sin(totalTime * 1.6f + (2 * (i+4))) * 2, glassTargets[i]->GetPosition().y, glassTargets[i]->GetPosition().z);
+			if (glassTargets[i]->GetChanged()) { glassTargets[i]->CalculateWorldMatrix(); }
+		}
 	}
 
 
@@ -699,10 +726,12 @@ void Game::Draw(float deltaTime, float totalTime)
 	glassPixelShader->SetData("light2", &light2, 44);
 	glassPixelShader->CopyBufferData("lightData");
 
-
-	if (dynamic_cast<target*>(glassTarget->scripts[0])->isActive)
+	for (int i = 0; i < 2; i++)
 	{
-		glassTarget->Draw(context);
+		if (dynamic_cast<target*>(glassTargets[i]->scripts[0])->isActive)
+		{
+			glassTargets[i]->Draw(context);
+		}
 	}
 
 	// Check out the texture that is stored in the font

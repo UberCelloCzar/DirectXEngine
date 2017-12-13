@@ -14,8 +14,8 @@ struct VertexToPixel
 	float4 position		      : SV_POSITION;	// XYZW position (System Value Position)
 	float4 refractionPosition : TEXCOORD;
 	float2 uv                 : TEXCOORD1;
-	float3 normal		      : TEXCOORD2;
-	float3 tangent		      : TEXCOORD3;
+	float3 normal		      : NORMAL;
+	float3 tangent		      : TANGENT;
 };
 
 struct DirectionalLight
