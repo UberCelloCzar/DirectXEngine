@@ -13,6 +13,8 @@
 #include "Glass.h"
 #include "SpriteBatch.h"
 #include "SpriteFont.h"
+#include "GameEntity.h"
+#include "Emitter.h"
 
 class Game
 	: public DXCore
@@ -38,6 +40,18 @@ public:
 	int score; // Player score
 private:
 
+	// Particle
+	ID3D11ShaderResourceView* particleTexture;
+	SimpleVertexShader* particleVertexShader;
+	SimplePixelShader* particlePixelShader;
+	ID3D11DepthStencilState* particleDepthState;
+	ID3D11BlendState* particleBlendState;
+	Emitter* emitter;
+	GameEntity* entity;
+	ID3D11SamplerState* particleSampler;
+	ID3D11ShaderResourceView* particleTextureSRV;
+	ID3D11ShaderResourceView* particleNormalMapSRV;
+
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders();
 	void LoadGeometry();
@@ -53,6 +67,7 @@ private:
 
 	Material* material;
 	Material* wallMat;
+	Material* specialWallMat;
 	GlassMat* glassMaterial;
 	GlassMat* glassMaterial2;
 	ID3D11ShaderResourceView* uiSRV;
@@ -67,6 +82,7 @@ private:
 	ID3D11ShaderResourceView* normalShaderResourceView4;
 	ID3D11RenderTargetView* renderTargetView;
 	ID3D11Texture2D* renderToTextureTexture;
+	ID3D11ShaderResourceView* shootingGalleryTexture;
 
 	// Targets for the scene
 	GameObject* targets[3];
