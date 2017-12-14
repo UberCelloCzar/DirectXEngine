@@ -62,6 +62,7 @@ Game::~Game()
 	delete glassMaterial2;
 	delete spriteBatch;
 	delete font;
+	uiSRV->Release();
 	particleTexture->Release();
 	particleBlendState->Release();
 	particleDepthState->Release();
@@ -125,6 +126,8 @@ void Game::Init()
 	LoadShaders();
 	camera = new Camera(width, height);
 	LoadGeometry();
+
+	mousePos = XMFLOAT3(0, 0, 0);
 
 	CreateWICTextureFromFile(device, context, L"images\\ui.jpg", 0, &uiSRV);
 	CreateWICTextureFromFile(device, context, L"images\\rock.jpg", 0, &shaderResourceViews[0]);
@@ -310,11 +313,11 @@ void Game::Init()
 	glassTargets[1] = new Glass(mesh3, glassMaterial2, { new target() });
 
 
-	targets[0]->SetPosition(0, 1.5f, 0);
-	targets[1]->SetPosition(0, 0, 0);
-	targets[2]->SetPosition(0, -1.5f, 0);
-	glassTargets[0]->SetPosition(0, 1.0f, -1.0f);
-	glassTargets[1]->SetPosition(0, -.8f, 1.0f);
+	targets[0]->SetPosition(0, 1.5f, 2);
+	targets[1]->SetPosition(0, 0, 2);
+	targets[2]->SetPosition(0, -1.5f, 2);
+	glassTargets[0]->SetPosition(0, 1.0f, 1.0f);
+	glassTargets[1]->SetPosition(0, -.8f, 3.0f);
 
 	//back wall
 	walls[0]->SetPosition(0, 0, 5);
@@ -430,7 +433,6 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
-
 	// Quit if the escape key is pressed
 	if (GetAsyncKeyState(VK_ESCAPE))
 		Quit();
@@ -449,7 +451,7 @@ void Game::Update(float deltaTime, float totalTime)
 						dynamic_cast<Bullet*>(bullets[i]->scripts[0])->isActive = false;
 						dynamic_cast<target*>(targets[j]->scripts[0])->isActive = false;
 						score += 1;
-						std::cout << score << std::endl;
+						//std::cout << score << std::endl;
 					}
 				}
 			}
@@ -487,22 +489,7 @@ void Game::Update(float deltaTime, float totalTime)
 
 	float right = 0;
 	float forward = 0;
-	if (GetAsyncKeyState('A') & 0x8000)
-	{
-		right -= 5 * deltaTime;
-	}
-	if (GetAsyncKeyState('D') & 0x8000)
-	{
-		right += 5 * deltaTime;
-	}
-	if (GetAsyncKeyState('W') & 0x8000)
-	{
-		forward += 5 * deltaTime;
-	}
-	if (GetAsyncKeyState('S') & 0x8000)
-	{
-		forward -= 5 * deltaTime;
-	}
+	
 	if (fireCD <= 0)
 	{
 		if (GetAsyncKeyState(VK_LBUTTON) & 0x8000)
@@ -704,10 +691,10 @@ void Game::Fire() // Fires a bullet
 		head = 0;
 	}
 
-	XMFLOAT3 pos = camera->GetPosition();
+	XMFLOAT3 pos = mousePos;
 	XMFLOAT3 dir = camera->GetDirection();
 	bullets[currentBullet]->SetPosition(pos.x, pos.y, pos.z); // Set the position and direction of the bullet, then fire it
-	bullets[currentBullet]->SetVelocity(dir.x * 100, dir.y * 100, dir.z * 100);
+	bullets[currentBullet]->SetVelocity(dir.x * 50, dir.y * 50, dir.z * 50);
 	dynamic_cast<Bullet*>(bullets[currentBullet]->scripts[0])->isActive = true;
 	fireCD = 1.0f;
 	std::cout << "Firing: " << currentBullet << std::endl;
@@ -894,15 +881,30 @@ void Game::OnMouseUp(WPARAM buttonState, int x, int y)
 void Game::OnMouseMove(WPARAM buttonState, int x, int y)
 {
 	// Add any custom code here...
+	
+	//save mouse position for firing
+	POINT p;
 
-	if (prevMousePos.x != NULL)
+	GetCursorPos(&p);
+
+	ScreenToClient(this->hWnd, &p);
+
+	float pX = p.x;
+	float pY = p.y;
+	pX = (pX / this->width) * 2 - 1;
+	pY = -((pY / this->height) * 2 - 1);
+
+	mousePos.x = pX;
+	mousePos.y = pY;
+
+	/*if (prevMousePos.x != NULL)
 	{
 		camera->MouseRotate(x - prevMousePos.x, y - prevMousePos.y); // Rotate the camera
-	}
+	}*/
+
 	// Save the previous mouse position, so we have it for the future
 	prevMousePos.x = x;
 	prevMousePos.y = y;
-
 }
 
 // --------------------------------------------------------

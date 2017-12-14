@@ -117,6 +117,8 @@ private:
 	int tail;
 	int currentBullet; // Current bullet
 
+	XMFLOAT3 mousePos;
+
 	void ReloadBullet(int i);
 	bool NoBullets(); // Returns a bool of whether there are any available bullets, ideally this never returns false
 	void Fire(); // Fires a bullet
