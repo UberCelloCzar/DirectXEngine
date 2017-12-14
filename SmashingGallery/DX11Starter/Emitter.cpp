@@ -125,9 +125,9 @@ void Emitter::UpdateSingleParticle(float dt, int index)
 	particles[index].Age += dt;
 	if (particles[index].Age >= lifetime)
 	{
-		firstAliveIndex++;
+		firstAliveIndex = firstAliveIndex +1;
 		firstAliveIndex %= maxParticles;
-		livingParticleCount--;
+		livingParticleCount = livingParticleCount - 1;
 		return;
 	}
 
@@ -167,10 +167,10 @@ void Emitter::SpawnParticle()
 	particles[firstDeadIndex].StartVelocity.y += ((float)rand() / RAND_MAX) * 0.4f - 0.2f;
 	particles[firstDeadIndex].StartVelocity.z += ((float)rand() / RAND_MAX) * 0.4f - 0.2f;
 
-	firstDeadIndex++;
+	firstDeadIndex = firstDeadIndex +1;
 	firstDeadIndex %= maxParticles;
 
-	livingParticleCount++;
+	livingParticleCount = livingParticleCount +1;
 }
 
 void Emitter::CopyParticlesToGPU(ID3D11DeviceContext* context)

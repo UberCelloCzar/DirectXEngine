@@ -58,6 +58,8 @@ Game::~Game()
 	delete wallMat;
 	delete bulletMaterial;
 	delete specialWallMat;
+	delete goldMat;
+	delete metalMat;
 	delete glassMaterial;
 	delete glassMaterial2;
 	delete spriteBatch;
@@ -67,12 +69,12 @@ Game::~Game()
 	particleBlendState->Release();
 	particleDepthState->Release();
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 6; i++)
 	{
 		shaderResourceViews[i]->Release();
 	}
 
-	for (int i = 0; i < 5; i++)
+	for (int i = 0; i < 7; i++)
 	{
 		normalShaderResourceViews[i]->Release();
 	}
@@ -141,6 +143,10 @@ void Game::Init()
 	CreateWICTextureFromFile(device, context, L"images\\shootingGallery.jpg", 0, &shootingGalleryTexture);
 	CreateWICTextureFromFile(device, context, L"images\\SnowTexture.tif", 0, &shaderResourceViews[3]);
 	CreateWICTextureFromFile(device, context, L"images\\SnowNormal.tif", 0, &normalShaderResourceViews[4]);
+	CreateWICTextureFromFile(device, context, L"images\\gold.jpg", 0, &shaderResourceViews[4]);
+	CreateWICTextureFromFile(device, context, L"images\\goldNormal.jpg", 0, &normalShaderResourceViews[5]);
+	CreateWICTextureFromFile(device, context, L"images\\metal.jpg", 0, &shaderResourceViews[5]);
+	CreateWICTextureFromFile(device, context, L"images\\metalNormal.jpg", 0, &normalShaderResourceViews[6]);
 
 	//load and set UI stuff
 	spriteBatch = new SpriteBatch(context);
@@ -176,16 +182,16 @@ void Game::Init()
 	device->CreateBlendState(&blend, &particleBlendState);
 
 	emitter = new Emitter(
-		100,							// Max particles
-		10,							// Particles per second
-		5,								// Particle lifetime
-		0.1f,							// Start size
-		5.0f,							// End size
-		XMFLOAT4(1, 0.1f, 0.1f, 0.2f),	// Start color
-		XMFLOAT4(1, 0.6f, 0.1f, 0),		// End color
-		XMFLOAT3(-2, 2, 0),				// Start velocity
-		XMFLOAT3(2, 0, 0),				// Start position
-		XMFLOAT3(0, -1, 0),				// Start acceleration
+		10,// Max particles
+		1,// Particles per second
+		2,// Particle lifetime
+		3,// Start size
+		0.1f,// End size
+		XMFLOAT4(1, 1, 1, 1.0f),// Start color
+		XMFLOAT4(1, .2, .2, 0),// End color
+		XMFLOAT3(0.5f, 0, 0),// Start velocity
+		XMFLOAT3(4, 3.5, 5),// Start position
+		XMFLOAT3(0, 0.5f, 0),// Start acceleration
 		device, particleVertexShader, particlePixelShader, particleTexture);
 
 
@@ -300,15 +306,19 @@ void Game::Init()
 	glassMaterial = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceViews[2], normalShaderResourceViews[2], renderToTextureSRV, samplerState1);
 	glassMaterial2 = new GlassMat(glassVertexShader, glassPixelShader, shaderResourceViews[2], normalShaderResourceViews[3], renderToTextureSRV, samplerState1);
 	bulletMaterial = new Material(vertexShader, pixelShader, shaderResourceViews[3], normalShaderResourceViews[4], samplerState1);
+	goldMat = new Material(vertexShader, pixelShader, shaderResourceViews[4], normalShaderResourceViews[5], samplerState1);
+	metalMat = new Material(vertexShader, pixelShader, shaderResourceViews[5], normalShaderResourceViews[6], samplerState1);
+
+
 
 	targets[0] = new GameObject(mesh1, material, { new target() });
-	targets[1] = new GameObject(mesh1, material, { new target() });
-	targets[2] = new GameObject(mesh1, material, { new target() });
-	walls[0] = new GameObject(mesh2, wallMat, { new Script() });
+	targets[1] = new GameObject(mesh1, goldMat, { new target() });
+	targets[2] = new GameObject(mesh1, metalMat, { new target() });
+	walls[0] = new GameObject(mesh2, specialWallMat, { new Script() });
 	walls[1] = new GameObject(mesh2, wallMat, { new Script() });
 	walls[2] = new GameObject(mesh2, wallMat, { new Script() });
 	walls[3] = new GameObject(mesh2, wallMat, { new Script() });
-	walls[4] = new GameObject(mesh2, specialWallMat, { new Script() });
+	walls[4] = new GameObject(mesh2, wallMat, { new Script() });
 	glassTargets[0] = new Glass(mesh1, glassMaterial, { new target() });
 	glassTargets[1] = new Glass(mesh3, glassMaterial2, { new target() });
 

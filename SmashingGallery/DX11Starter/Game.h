@@ -62,15 +62,17 @@ private:
 
 	Material* material;
 	Material* wallMat;
+	Material* metalMat;
+	Material* goldMat;
 	Material* specialWallMat;
 	Material* bulletMaterial;
 	GlassMat* glassMaterial;
 	GlassMat* glassMaterial2;
 	ID3D11ShaderResourceView* uiSRV;
-	ID3D11ShaderResourceView* shaderResourceViews[4];
+	ID3D11ShaderResourceView* shaderResourceViews[6];
 	ID3D11ShaderResourceView* renderToTextureSRV;
 	ID3D11SamplerState* samplerState1;
-	ID3D11ShaderResourceView* normalShaderResourceViews[5];
+	ID3D11ShaderResourceView* normalShaderResourceViews[7];
 	ID3D11RenderTargetView* renderTargetView;
 	ID3D11Texture2D* renderToTextureTexture;
 	ID3D11ShaderResourceView* shootingGalleryTexture;
