@@ -132,7 +132,7 @@
     <FxCompile Include="ParticlePixelShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
-    <FxCompile Include="ParticleVetexShader.hlsl">
+    <FxCompile Include="ParticleVertexShader.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

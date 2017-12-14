@@ -1,15 +1,15 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(387,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (DX11Starter.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   Game.cpp
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(321): warning C4305: 'argument': truncation from 'double' to 'float'
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(326): warning C4305: 'argument': truncation from 'double' to 'float'
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(331): warning C4305: 'argument': truncation from 'double' to 'float'
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(336): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(322): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(327): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(332): warning C4305: 'argument': truncation from 'double' to 'float'
 d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(337): warning C4305: 'argument': truncation from 'double' to 'float'
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(342): warning C4305: 'argument': truncation from 'double' to 'float'
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(657): warning C4244: '=': conversion from 'unsigned int' to 'FLOAT', possible loss of data
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(658): warning C4244: '=': conversion from 'unsigned int' to 'FLOAT', possible loss of data
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(814): warning C4838: conversion from 'unsigned int' to 'LONG' requires a narrowing conversion
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(824): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
-d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(828): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(338): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(343): warning C4305: 'argument': truncation from 'double' to 'float'
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(665): warning C4244: '=': conversion from 'unsigned int' to 'FLOAT', possible loss of data
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(666): warning C4244: '=': conversion from 'unsigned int' to 'FLOAT', possible loss of data
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(822): warning C4838: conversion from 'unsigned int' to 'LONG' requires a narrowing conversion
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(832): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
+d:\documents\rit 2171\ggp\directxengine\smashinggallery\dx11starter\game.cpp(836): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
   DX11Starter.vcxproj -> D:\Documents\RIT 2171\GGP\DirectXEngine\SmashingGallery\x64\Debug\SmashingGallery.exe
   DX11Starter.vcxproj -> D:\Documents\RIT 2171\GGP\DirectXEngine\SmashingGallery\x64\Debug\SmashingGallery.pdb (Partial PDB)
