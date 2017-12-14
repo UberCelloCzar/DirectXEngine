@@ -127,7 +127,7 @@ void Game::Init()
 	camera = new Camera(width, height);
 	LoadGeometry();
 
-	mousePos = XMFLOAT3(0, 0, 0);
+	mousePos = XMFLOAT3(0, 0, -5);
 
 	CreateWICTextureFromFile(device, context, L"images\\ui.jpg", 0, &uiSRV);
 	CreateWICTextureFromFile(device, context, L"images\\rock.jpg", 0, &shaderResourceViews[0]);
@@ -694,7 +694,7 @@ void Game::Fire() // Fires a bullet
 	XMFLOAT3 pos = mousePos;
 	XMFLOAT3 dir = camera->GetDirection();
 	bullets[currentBullet]->SetPosition(pos.x, pos.y, pos.z); // Set the position and direction of the bullet, then fire it
-	bullets[currentBullet]->SetVelocity(dir.x * 50, dir.y * 50, dir.z * 50);
+	bullets[currentBullet]->SetVelocity(dir.x * 20, dir.y * 20, dir.z * 20);
 	dynamic_cast<Bullet*>(bullets[currentBullet]->scripts[0])->isActive = true;
 	fireCD = 1.0f;
 	std::cout << "Firing: " << currentBullet << std::endl;
@@ -891,8 +891,8 @@ void Game::OnMouseMove(WPARAM buttonState, int x, int y)
 
 	float pX = p.x;
 	float pY = p.y;
-	pX = (pX / this->width) * 2 - 1;
-	pY = -((pY / this->height) * 2 - 1);
+	pX = (pX / this->width) * 7 - 3.5;
+	pY = -((pY / this->height) * 5 - 2.5);
 
 	mousePos.x = pX;
 	mousePos.y = pY;

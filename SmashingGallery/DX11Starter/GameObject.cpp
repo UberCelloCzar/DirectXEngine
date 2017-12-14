@@ -128,7 +128,7 @@ void GameObject::Update(float deltaTime)
 		}
 	}
 
-	if (velocity.x != 0 && velocity.y != 0 && velocity.z != 0)
+	if (velocity.x != 0 || velocity.y != 0 || velocity.z != 0)
 	{
 		Translate(velocity.x*deltaTime, velocity.y*deltaTime, velocity.z*deltaTime);
 	}

@@ -13,5 +13,7 @@ c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11start
 c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(823): warning C4244: 'argument': conversion from 'unsigned int' to 'float', possible loss of data
 c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(892): warning C4244: 'initializing': conversion from 'LONG' to 'float', possible loss of data
 c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(893): warning C4244: 'initializing': conversion from 'LONG' to 'float', possible loss of data
+c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(894): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+c:\users\jreco\onedrive\documents\github\directxengine\smashinggallery\dx11starter\game.cpp(895): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
   DX11Starter.vcxproj -> C:\Users\jreco\OneDrive\Documents\GitHub\DirectXEngine\SmashingGallery\x64\Debug\SmashingGallery.exe
   DX11Starter.vcxproj -> C:\Users\jreco\OneDrive\Documents\GitHub\DirectXEngine\SmashingGallery\x64\Debug\SmashingGallery.pdb (Partial PDB)
