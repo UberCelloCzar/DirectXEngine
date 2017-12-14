@@ -187,8 +187,8 @@ void Game::Init()
 		2,// Particle lifetime
 		3,// Start size
 		0.1f,// End size
-		XMFLOAT4(1, 1, 1, 1.0f),// Start color
-		XMFLOAT4(1, .2, .2, 0),// End color
+		XMFLOAT4(1, .5, .1, 1.0f),// Start color
+		XMFLOAT4(.7, .2, .05, 0),// End color
 		XMFLOAT3(0.5f, 0, 0),// Start velocity
 		XMFLOAT3(4, 3.5, 5),// Start position
 		XMFLOAT3(0, 0.5f, 0),// Start acceleration
@@ -589,13 +589,6 @@ void Game::RenderToTexture()
 	{
 		walls[i]->Draw(context);
 	}
-
-	float blend[4] = { 1,1,1,1 };
-	context->OMSetBlendState(particleBlendState, blend, 0xffffffff);
-	context->OMSetDepthStencilState(particleDepthState, 0);
-	emitter->Draw(context, camera);
-	context->OMSetBlendState(0, blend, 0xffffffff);
-	context->OMSetDepthStencilState(0, 0);
 
 	context->OMSetRenderTargets(1, &backBufferRTV, depthStencilView);
 
